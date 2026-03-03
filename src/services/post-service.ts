@@ -89,6 +89,34 @@ export const postService = {
       }
   },
 
+  getLatestArticles: async (limit: number = 5): Promise<Article[]> => {
+    try {
+        // Attempt to request filtered params natively if the API supports it
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response: any = await api.get('/articles', {
+            params: { sort: 'createdAt', order: 'desc', limit }
+        });
+        
+        // Parse array safely
+        let items: Article[] = [];
+        if (Array.isArray(response)) items = response;
+        else if (response && Array.isArray(response.data)) items = response.data;
+        else if (response && Array.isArray(response.articles)) items = response.articles;
+
+        // Fallback: Just in case the backend ignored our sorting/limiting params, we manually sort and slice client-side
+        items = items.sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA; // Descending
+        });
+
+        return items.slice(0, limit);
+    } catch (error) {
+        console.error("Failed to fetch latest articles", error);
+        throw error;
+    }
+  },
+
   getArticleById: async (id: string): Promise<Article | undefined> => {
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,31 +224,31 @@ export const postService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uploadBulkArticles: async (file: File): Promise<any> => {
     try {
-      // MOCK IMPLEMENTATION FOR DEVELOPMENT
-      // Simulate backend validation
-      if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
-        throw {
-          response: {
-             data: {
-                 message: "Invalid file format. Server only accepts CSV files."
-             }
-          }
-        };
-      }
+      // // MOCK IMPLEMENTATION FOR DEVELOPMENT
+      // // Simulate backend validation
+      // if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      //   throw {
+      //     response: {
+      //        data: {
+      //            message: "Invalid file format. Server only accepts CSV files."
+      //        }
+      //     }
+      //   };
+      // }
 
-      // Simulate network request delay (2 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // // Simulate network request delay (2 seconds)
+      // await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simulate successful backend response
-      return {
-          message: `Successfully processed ${file.name}. (Mock Response)`,
-          data: {
-              status: "success",
-              rowsProcessed: Math.floor(Math.random() * 50) + 10 // Random number to look realistic
-          }
-      };
+      // // Simulate successful backend response
+      // return {
+      //     message: `Successfully processed ${file.name}. (Mock Response)`,
+      //     data: {
+      //         status: "success",
+      //         rowsProcessed: Math.floor(Math.random() * 50) + 10 // Random number to look realistic
+      //     }
+      // };
 
-      /* Original Implementation:
+       // Original Implementation:
       const formData = new FormData();
       formData.append('file', file);
       
@@ -229,7 +257,7 @@ export const postService = {
       const response = await api.post('/articles/bulk/upload', formData);
       
       return response;
-      */
+      
     } catch (error) {
        console.error("Failed to upload bulk articles:", error);
        throw error;

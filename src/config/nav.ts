@@ -202,9 +202,23 @@ export const sidebarNav: SidebarNavGroup[] = [
       },
       {
         title: "Polls",
-        href: "/polls",
+        href: "#",
         icon: BarChart,
         variant: "ghost",
+        items: [
+          {
+            title: "Add Poll",
+            href: "/polls/add",
+            icon: BarChart,
+            variant: "ghost",
+          },
+          {
+            title: "Polls List",
+            href: "/polls",
+            icon: BarChart,
+            variant: "ghost",
+          },
+        ]
       },
       {
         title: "Subscribers",
@@ -271,7 +285,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         variant: "ghost",
         items: [
           {
-            title: "User List",
+            title: "Employee List",
             href: "/settings/users",
             icon: Users,
             variant: "ghost",

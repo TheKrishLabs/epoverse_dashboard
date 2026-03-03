@@ -357,7 +357,7 @@ export function UserList() {
   return (
     <div className="space-y-4 p-4 md:p-6 bg-white dark:bg-sidebar min-h-[calc(100vh-80px)]">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
-        <h2 className="text-xl font-bold text-gray-800">User list</h2>
+        <h2 className="text-xl font-bold text-gray-800">Employee list</h2>
         <Button 
           onClick={handleAddClick}
           className="bg-[#198754] hover:bg-[#157347] text-white rounded-[3px] h-9 px-4 font-medium tracking-wide shadow-none"
