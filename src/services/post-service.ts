@@ -154,19 +154,20 @@ export const postService = {
   createArticle: async (payload: {
     headline: string;
     content: string;
+    shortDescription: string;
     slug: string;
     category: string;
     language: string;
     status: string;
+    image: string;
     thumbnail?: string;
-    image?: string;
     imageAlt?: string;
     tags?: string[];
     metaKeywords?: string[];
     metaDescription?: string;
     isLatest?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<any> => {
+  } | FormData): Promise<any> => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await api.post<any>('/articles', payload);

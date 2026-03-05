@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, X, ArrowLeft, Loader2 } from "lucide-react";
+import { Sparkles, X, ArrowLeft, Loader2, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { postService, Category } from "@/services/post-service";
@@ -162,6 +162,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         initialData?.image || (initialData as any)?.featuredImage || null
     );
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
     
     // Form State
     const [language, setLanguage] = useState(() => {
@@ -213,6 +215,20 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
     const removeImage = useCallback(() => {
         setImagePreviewUrl(null);
+        setImageFile(null);
+        setImageError(null);
+    }, []);
+
+    const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        setImageError(null);
+        
+        if (file) {
+            // Optional: add dimension checks similar to opinion-form if needed here
+            const objectUrl = URL.createObjectURL(file);
+            setImagePreviewUrl(objectUrl);
+            setImageFile(file);
+        }
     }, []);
 
     const handleSettingChange = useCallback((key: keyof typeof settings) => {
@@ -238,15 +254,15 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             return;
         }
 
-        if (!imagePreviewUrl) {
-             alert("A 'Featured Image' URL is required. Please provide one.");
+        if (!imagePreviewUrl && !imageFile) {
+             alert("A 'Featured Image' (URL or Upload) is required. Please provide one.");
              return;
         }
 
         setIsSaving(true);
 
         try {
-            // Generate a slug from the headline and append a unique identifier to prevent 409 DB Conflicts on unique indexes
+            // Generate a slug from the headline
             const baseSlug = seo.customUrl || headLine
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
@@ -256,23 +272,49 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             // Convert tags/keywords to arrays safely
             const keywordList = seo.keyword.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
 
-            // Map form data strictly to Add Article API requirements
-            const payload = {
-                headline: headLine, 
-                shortHead: shortHead, // Added short info back to the payload
-                content: content,
-                category: category,
-                language: language,
-                slug: generatedSlug,
-                status: settings.publish ? "published" : "draft",
-                thumbnail: imagePreviewUrl || undefined,
-                image: imagePreviewUrl || undefined,
-                imageAlt: "featured image", // Optional: Add a field for alt text later
-                tags: keywordList, // Assuming we use SEO keywords for tags currently
-                metaKeywords: keywordList,
-                metaDescription: seo.description,
-                isLatest: settings.latest
-            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let payload: any;
+
+            if (imageFile) {
+                // Send as multipart/form-data
+                const formData = new FormData();
+                formData.append("headline", headLine);
+                formData.append("shortDescription", shortHead);
+                formData.append("content", content);
+                formData.append("category", category);
+                formData.append("language", language);
+                formData.append("slug", generatedSlug);
+                formData.append("status", settings.publish ? "published" : "draft");
+                formData.append("image", imageFile);
+                if (seo.title) formData.append("imageAlt", seo.title);
+                
+                keywordList.forEach((k: string) => {
+                    formData.append("tags", k);
+                    formData.append("metaKeywords", k);
+                });
+                
+                if (seo.description) formData.append("metaDescription", seo.description);
+                formData.append("isLatest", String(settings.latest));
+                
+                payload = formData;
+            } else {
+                // Map form data strictly to Add Article API requirements
+                payload = {
+                    headline: headLine, 
+                    shortDescription: shortHead, 
+                    content: content,
+                    category: category,
+                    language: language,
+                    slug: generatedSlug,
+                    status: settings.publish ? "published" : "draft",
+                    image: imagePreviewUrl as string, 
+                    imageAlt: seo.title || "featured image", 
+                    tags: keywordList, 
+                    metaKeywords: keywordList,
+                    metaDescription: seo.description,
+                    isLatest: settings.latest
+                };
+            }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const origData: any = initialData;
@@ -463,32 +505,79 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             {/* Media Section */}
             <div className="space-y-2 pt-8">
                 <h3 className="text-lg font-medium">Media</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label>Image URL</Label>
-                        <Input 
-                            placeholder="https://example.com/image.jpg"
-                            value={imagePreviewUrl || ""}
-                            onChange={(e) => setImagePreviewUrl(e.target.value)}
-                        />
-                        {imagePreviewUrl && (
-                            <div className="relative mt-2 w-full sm:w-40 h-32 sm:h-24 rounded-md overflow-hidden border bg-muted flex items-center justify-center">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={imagePreviewUrl} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-1 right-1 h-6 w-6"
-                                    onClick={removeImage}
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* Image Upload/URL Source */}
+                    <div className="space-y-4 p-4 border rounded-md bg-gray-50/50">
+                        <Label className="text-base font-semibold text-gray-800">Featured Image (URL or Upload)</Label>
+                        
+                        {/* URL Option */}
+                        <div className="space-y-2">
+                            <Label className="text-sm">Image URL</Label>
+                            <Input 
+                                placeholder="https://example.com/image.jpg"
+                                value={!imageFile ? (imagePreviewUrl || "") : ""}
+                                onChange={(e) => {
+                                    setImageFile(null); // Clear file if URL is typed
+                                    setImagePreviewUrl(e.target.value);
+                                }}
+                            />
+                        </div>
+
+                        <div className="relative flex items-center py-2">
+                            <div className="flex-grow border-t border-gray-300"></div>
+                            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">OR</span>
+                            <div className="flex-grow border-t border-gray-300"></div>
+                        </div>
+
+                        {/* File Option */}
+                        <div className="space-y-2">
+                            <Label className="text-sm">Upload Image</Label>
+                            <Input 
+                                type="file" 
+                                id="featured-image-upload"
+                                className="hidden"
+                                onChange={handlePhotoChange} 
+                                accept="image/jpeg, image/jpg, image/png, image/webp" 
+                            />
+                            <div className="flex items-center gap-4">
+                                <Label 
+                                    htmlFor="featured-image-upload" 
+                                    className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium transition-colors w-full justify-center text-gray-600"
                                 >
-                                    <X className="h-3 w-3" />
-                                </Button>
+                                    <UploadCloud className="h-4 w-4" />
+                                    Choose File
+                                </Label>
+                            </div>
+                            {imageError && <p className="text-xs text-red-500 font-medium mt-1">{imageError}</p>}
+                        </div>
+
+                        {/* Unified Preview */}
+                        {imagePreviewUrl && (
+                            <div className="mt-4">
+                                <Label className="text-xs text-muted-foreground mb-1 block">Preview:</Label>
+                                <div className="relative w-full h-40 sm:h-48 rounded-md overflow-hidden border bg-white flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={imagePreviewUrl} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-sm"
+                                        onClick={removeImage}
+                                        type="button"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
-                    <div className="space-y-2">
-                        <Label>Video URL</Label>
-                        <Input placeholder="https://youtube.com/..." />
+                    
+                    {/* Other Media Options */}
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Video URL</Label>
+                            <Input placeholder="https://youtube.com/..." />
+                        </div>
                     </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
