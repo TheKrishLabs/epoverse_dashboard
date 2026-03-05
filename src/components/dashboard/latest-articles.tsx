@@ -119,10 +119,11 @@ export function LatestArticles() {
                     <TableCell>
                       <div className="h-10 w-10 relative rounded overflow-hidden bg-slate-100 flex items-center justify-center border">
                         {article.image || article.featuredImage ? (
-                          <img 
+                          <Image 
                             src={article.image || article.featuredImage || ''} 
                             alt={article.title || "Article Image"}
-                            className="object-cover w-full h-full"
+                            fill
+                            className="object-cover"
                           />
                         ) : (
                           <ImageIcon className="h-5 w-5 text-slate-400" />

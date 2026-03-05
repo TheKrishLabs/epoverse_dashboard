@@ -30,13 +30,16 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { storyService } from "@/services/story-service";
+import { mediaService } from "@/services/media-service";
+import { languageService, Language } from "@/services/language-service";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface TemporaryStory {
   id: string; // Unique ID for temp list
   language: string;
   title: string;
-  imageName: string;
+  imageFile: File;
   buttonText: string;
   buttonLink: string;
 }
@@ -50,9 +53,25 @@ export default function StoryCreatePage() {
   const [buttonLink, setButtonLink] = useState("");
 
   const [tempStories, setTempStories] = useState<TemporaryStory[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const data = await languageService.getLanguages();
+        setLanguages(data || []);
+      } catch (err) {
+        console.error("Failed to fetch languages", err);
+      } finally {
+        setIsLoadingLanguages(false);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -80,11 +99,16 @@ export default function StoryCreatePage() {
         return;
     }
 
+    if (tempStories.some(s => s.title.toLowerCase().trim() === title.toLowerCase().trim())) {
+        setError("A story with this title is already in your queue.");
+        return;
+    }
+
     const newStory: TemporaryStory = {
       id: Date.now().toString(),
       language,
       title,
-      imageName: image.name,
+      imageFile: image,
       buttonText,
       buttonLink
     };
@@ -113,18 +137,36 @@ export default function StoryCreatePage() {
 
     setIsSaving(true);
     try {
-        // Simulate backend save by iterating and calling calling createStory
-        // In a real app, this might be a single batch API call
+        const items = [];
         for (const story of tempStories) {
-            await storyService.createStory({
+            // 1. Pre-upload image
+            const formData = new FormData();
+            formData.append("file", story.imageFile);
+            formData.append("thumbHeight", "240");
+            formData.append("thumbWidth", "438");
+            formData.append("largeHeight", "585");
+            formData.append("largeWidth", "1067");
+            
+            const uploadRes = await mediaService.uploadPhoto(formData);
+            const imageUrl = uploadRes.data?.url || uploadRes.data?.thumbnailUrl || "";
+
+            // 2. Queue for Story batch
+            items.push({
                 title: story.title,
-                language: story.language,
+                Language: story.language, // Backend expects capitalized "Language" as Mongo ID
                 buttonText: story.buttonText,
                 buttonLink: story.buttonLink,
-                // image handling would be real upload here
-                image: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&auto=format&fit=crop&q=60" 
+                Image: imageUrl,        // Backend expects capitalized "Image"
+                storyImage: imageUrl    // Backend expects "storyImage" as string
             });
         }
+
+        // 3. Dispatch array to create endpoint
+        await storyService.createStory({
+            title: tempStories[0].title, 
+            Language: tempStories[0].language,
+            items 
+        });
 
         setSuccess("Stories saved successfully!");
         setTempStories([]);
@@ -133,9 +175,18 @@ export default function StoryCreatePage() {
             setSuccess(null);
             router.push('/story');
         }, 1500);
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
         console.error("Failed to save stories", error);
-        setError("Failed to save stories. Please try again.");
+        
+        let errorMsg = "Failed to save stories. Please try again.";
+        if (error?.response?.status === 409) {
+            errorMsg = "A story with this title already exists on the server.";
+        } else if (error?.response?.data?.message) {
+            errorMsg = error.response.data.message;
+        }
+
+        setError(errorMsg);
     } finally {
         setIsSaving(false);
     }
@@ -173,12 +224,14 @@ export default function StoryCreatePage() {
                         <Label htmlFor="language">Language <span className="text-red-500">*</span></Label>
                         <Select value={language} onValueChange={setLanguage}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select Language" />
+                                <SelectValue placeholder={isLoadingLanguages ? "Loading..." : "Select Language"} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="English">English</SelectItem>
-                                <SelectItem value="Hindi">Hindi</SelectItem>
-                                <SelectItem value="Tamil">Tamil</SelectItem>
+                                {languages.map((lang) => (
+                                    <SelectItem key={lang._id} value={lang._id}>
+                                        {lang.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -264,8 +317,8 @@ export default function StoryCreatePage() {
                         {tempStories.length > 0 ? (
                             tempStories.map((story) => (
                                 <TableRow key={story.id}>
-                                    <TableCell>{story.imageName}</TableCell>
-                                    <TableCell>{story.title}</TableCell>
+                                    <TableCell className="max-w-[150px] truncate" title={story.imageFile.name}>{story.imageFile.name}</TableCell>
+                                    <TableCell className="font-medium max-w-[200px] truncate" title={story.title}>{story.title}</TableCell>
                                     <TableCell>{story.buttonText}</TableCell>
                                     <TableCell>{story.buttonLink}</TableCell>
                                     <TableCell>

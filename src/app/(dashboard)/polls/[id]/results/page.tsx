@@ -6,6 +6,7 @@ import Link from "next/link"
 
 import { pollService, PollData } from "@/services/poll-service"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export default function PollResultsPage({ params }: { params: { id: string } }) {
   const [poll, setPoll] = useState<PollData | null>(null)
@@ -68,8 +69,6 @@ export default function PollResultsPage({ params }: { params: { id: string } }) 
   // Calculate totals
   const totalVotes = poll.options?.reduce((sum, option) => sum + (option.votes || 0), 0) || 0;
 
-  // Find max votes for dynamic scaling of progress bars (optional, typically it uses 100%)
-  const maxVotes = Math.max(...poll.options.map(o => o.votes || 0), 1); // Avoid division by zero
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">

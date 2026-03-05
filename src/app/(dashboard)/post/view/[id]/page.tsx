@@ -180,9 +180,9 @@ export default function ViewPostPage({ params }: ViewPostPageProps) {
                         <li className="flex items-center gap-2">
                             <div className={`h-2 w-2 rounded-full ${post.status === "Publish" ? "bg-green-500" : "bg-gray-300"}`} /> Published
                         </li>
-                        <li className="flex items-center gap-2">
+                        {/* <li className="flex items-center gap-2">
                             <div className={`h-2 w-2 rounded-full ${post.socialPost ? "bg-green-500" : "bg-gray-300"}`} /> Social Post
-                        </li>
+                        </li> */}
                     </ul>
                 </CardContent>
             </Card>

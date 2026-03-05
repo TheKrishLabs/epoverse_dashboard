@@ -106,7 +106,7 @@ export default function BreakingPostPage() {
           ? { ...p, post: formData.post, language: formData.language, time: new Date().toISOString() } 
           : p
       ));
-      setSuccessMessage("Breaking post updated successfully!");
+      setSuccessMessage("Trending post updated successfully!");
     } else {
       // Create new
       const newPost: BreakingPost = {
@@ -116,7 +116,7 @@ export default function BreakingPostPage() {
         time: new Date().toISOString(),
       };
       setPosts(prev => [newPost, ...prev]);
-      setSuccessMessage("Breaking post added successfully!");
+      setSuccessMessage("Trending post added successfully!");
     }
 
     // Reset form
@@ -146,7 +146,7 @@ export default function BreakingPostPage() {
   const handleDelete = () => {
     if (deleteId) {
       setPosts(prev => prev.filter(p => p.id !== deleteId));
-      setSuccessMessage("Breaking post deleted successfully!");
+      setSuccessMessage("Trending post deleted successfully!");
       setIsDeleteDialogOpen(false);
       setDeleteId(null);
        setTimeout(() => setSuccessMessage(null), 3000);
@@ -193,7 +193,7 @@ export default function BreakingPostPage() {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Breaking Post</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Trending Post</h2>
       </div>
 
       {successMessage && (
@@ -206,7 +206,7 @@ export default function BreakingPostPage() {
       {/* --- Section 1: Add/Edit Form --- */}
       <Card className="dark:bg-sidebar dark:border-border">
         <CardHeader>
-          <CardTitle>{editingId ? "Edit Breaking Post" : "Add Breaking Post"}</CardTitle>
+          <CardTitle>{editingId ? "Edit Trending Post" : "Add Trending Post"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4">
@@ -266,7 +266,7 @@ export default function BreakingPostPage() {
       <Card className="dark:bg-sidebar dark:border-border">
          <CardHeader>
             <div className="flex items-center justify-between">
-                <CardTitle>Breaking Post List</CardTitle>
+                <CardTitle>Trending Post List</CardTitle>
                 <div className="flex items-center gap-2">
                     <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -288,7 +288,7 @@ export default function BreakingPostPage() {
                             <TableHead className="w-[50px] font-bold text-emerald-900 dark:text-emerald-100">Sl</TableHead>
                             <TableHead className="font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('post')}>
                                 <div className="flex items-center gap-1">
-                                    Breaking Post
+                                    Trending Post
                                     <ArrowUpDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
@@ -396,7 +396,7 @@ export default function BreakingPostPage() {
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this breaking post? This action cannot be undone.
+              Are you sure you want to delete this Trending post? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

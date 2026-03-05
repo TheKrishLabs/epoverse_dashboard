@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Edit, Trash2, ArrowUpDown, Loader2, Eye, ToggleLeft, ToggleRight, Filter } from "lucide-react"
+import { Plus, Edit, Trash2, ArrowUpDown, Eye, ToggleLeft, ToggleRight, Filter } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -90,7 +90,7 @@ export function OpinionList() {
     }
   }
 
-  const toggleStatus = async (opinion: OpinionData) => {
+  const toggleStatus = useCallback(async (opinion: OpinionData) => {
     const opinionId = opinion.id || opinion._id;
     if (!opinionId) return;
     try {
@@ -101,7 +101,7 @@ export function OpinionList() {
         console.error("Failed to toggle status", err);
         setError("Failed to toggle status");
     }
-  }
+  }, [])
 
   const filteredOpinions = useMemo(() => {
       if (selectedLanguage === "all") return opinions;
@@ -284,7 +284,7 @@ export function OpinionList() {
         },
       },
     ],
-    []
+    [toggleStatus]
   )
 
   return (

@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Edit, Trash2, ArrowUpDown, Loader2, BarChart2, ToggleLeft, ToggleRight, Download, FileSpreadsheet } from "lucide-react"
+import { Plus, Edit, Trash2, ArrowUpDown, BarChart2, Download, FileSpreadsheet } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { PollData, pollService } from "@/services/poll-service"
-import { languageService, Language } from "@/services/language-service"
+import { languageService } from "@/services/language-service"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -24,7 +24,7 @@ import {
 
 export function PollList() {
   const [polls, setPolls] = useState<PollData[]>([])
-  const [languages, setLanguages] = useState<Language[]>([])
+  // const [languages, setLanguages] = useState<Language[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
@@ -36,7 +36,7 @@ export function PollList() {
     setIsLoading(true)
     setError(null)
     try {
-      const [pollsData, langData] = await Promise.all([
+      const [pollsData] = await Promise.all([
          pollService.getPolls(),
          languageService.getLanguages()
       ])
@@ -62,7 +62,7 @@ export function PollList() {
       ];
 
       setPolls(actualPolls)
-      setLanguages(langData || [])
+      // setLanguages(langData || [])
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError((err as { customMessage?: string }).customMessage || err.message)
@@ -103,7 +103,7 @@ export function PollList() {
     }
   }
 
-  const toggleStatus = async (poll: PollData) => {
+  const toggleStatus = useCallback(async (poll: PollData) => {
     const pollId = poll.id || poll._id;
     if (!pollId) return;
     try {
@@ -116,7 +116,7 @@ export function PollList() {
         setError("Failed to toggle status");
         await fetchData(); // Revert back on error
     }
-  }
+  }, [])
 
   const exportToCSV = () => {
       if (polls.length === 0) return;
@@ -304,7 +304,7 @@ export function PollList() {
         },
       },
     ],
-    []
+    [toggleStatus]
   )
 
   return (

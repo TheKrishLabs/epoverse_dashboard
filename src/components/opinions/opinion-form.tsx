@@ -50,7 +50,11 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
     }, [])
 
     // Form State
-    const [language, setLanguage] = useState(initialData?.language || "")
+    const [language, setLanguage] = useState(() => {
+        const langData = initialData?.language;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return typeof langData === 'object' && langData ? (langData as any)._id : (langData || "");
+    })
     const [name, setName] = useState(initialData?.name || "")
     const [designation, setDesignation] = useState(initialData?.designation || "")
     const [headline, setHeadline] = useState(initialData?.headline || "")

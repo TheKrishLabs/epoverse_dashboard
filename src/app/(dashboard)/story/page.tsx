@@ -45,6 +45,7 @@ export default function StoryManagePage() {
   const [stories, setStories] = useState<StoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Table State
@@ -53,7 +54,7 @@ export default function StoryManagePage() {
   const [sortConfig, setSortConfig] = useState<{ key: keyof StoryData; direction: 'asc' | 'desc' } | null>(null);
 
   // Delete Dialog State
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // --- Effects ---
@@ -63,11 +64,13 @@ export default function StoryManagePage() {
 
   const loadStories = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
         const data = await storyService.getStories();
         setStories(data);
     } catch (error) {
         console.error("Failed to load stories", error);
+        setErrorMessage("Failed to load stories from the server. Please try again.");
     } finally {
         setLoading(false);
     }
@@ -75,7 +78,7 @@ export default function StoryManagePage() {
 
   // --- Handlers ---
 
-  const confirmDelete = (id: number) => {
+  const confirmDelete = (id: string | number) => {
     setDeleteId(id);
     setIsDeleteDialogOpen(true);
   };
@@ -255,6 +258,13 @@ export default function StoryManagePage() {
         <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-900 dark:text-emerald-400">
            <AlertTitle>Success</AlertTitle>
            <AlertDescription>{successMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {errorMessage && (
+        <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 mt-2">
+           <AlertTitle>Error</AlertTitle>
+           <AlertDescription>{errorMessage}</AlertDescription>
         </Alert>
       )}
 

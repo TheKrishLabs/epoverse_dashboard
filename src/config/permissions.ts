@@ -79,7 +79,7 @@ export const MODULE_PERMISSIONS: PermissionModule[] = [
       { id: "news_main", name: "News" },
       { id: "news_photo_post", name: "News >> Photo post" },
       { id: "news_positioning", name: "News >> Positioning" },
-      { id: "news_breaking", name: "News >> Breaking news" },
+      { id: "news_breaking", name: "News >> Trending news" },
       { id: "news_post", name: "News >> Post" }
     ]
   },

@@ -1,23 +1,17 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, Sparkles, X, ArrowLeft, Loader2 } from "lucide-react";
-import dynamic from "next/dynamic";
+import { useState, useEffect, useCallback } from "react";
+import { Sparkles, X, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { postService, Category } from "@/services/post-service";
+import { authService } from "@/services/auth-service";
 import { languageService, Language } from "@/services/language-service";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,9 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
-// Dynamic import for ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
-import "react-quill-new/dist/quill.snow.css";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface PostData {
     id?: string;
@@ -154,14 +146,17 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         fetchData();
     }, []);
 
-    const [date, setDate] = useState<Date | undefined>(
+    /* const [date, setDate] = useState<Date | undefined>(
         initialData?.date ? new Date(initialData.date) : 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (initialData as any)?.releaseDate ? new Date((initialData as any).releaseDate) : 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (initialData as any)?.createdAt ? new Date((initialData as any).createdAt) : undefined
-    );
+    ); */
     const [content, setContent] = useState(initialData?.content || "");
+    const handleContentChange = useCallback((newContent: string) => {
+        setContent(newContent);
+    }, []);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(
         // Use initial string URL if editing, otherwise null
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,24 +174,29 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         const catData: any = initialData?.category;
         return typeof catData === 'object' && catData ? catData._id : (catData || "");
     });
-    const [subCategory, setSubCategory] = useState(initialData?.subCategory || "");
+    // const [subCategory, setSubCategory] = useState(initialData?.subCategory || "");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [headLine, setHeadLine] = useState(initialData?.headLine || (initialData as any)?.headline || (initialData as any)?.title || "");
     const [shortHead, setShortHead] = useState(initialData?.shortHead || "");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [reporter, setReporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
+
+    useEffect(() => {
+        // Fetch the logged-in user to display as the Content Writer
+        const user = authService.getUser();
+        if (user && (user.name || user.fullName)) {
+            setReporter(user.fullName || user.name || "Current User");
+        }
+    }, []);
     
     // SEO & Settings State
     const [settings, setSettings] = useState(initialData?.settings || {
         latest: false,
-        breaking: false,
-        feature: false,
+        Trending: false,
+        // feature: false,
         recommended: false,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         publish: (initialData as any)?.status === "Publish" || (initialData as any)?.status === "published",
-        schema: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        social: (initialData as any)?.socialPost || false
     });
     const [seo, setSeo] = useState(initialData?.seo || {
         customUrl: "",
@@ -211,19 +211,19 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
     const [errors, setErrors] = useState<Record<string, boolean>>({});
 
-    const removeImage = () => {
+    const removeImage = useCallback(() => {
         setImagePreviewUrl(null);
-    }
+    }, []);
 
-    const handleSettingChange = (key: keyof typeof settings) => {
+    const handleSettingChange = useCallback((key: keyof typeof settings) => {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    }
+    }, []);
     
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleSeoChange = (key: keyof typeof seo, value: string) => {
+    const handleSeoChange = useCallback((key: keyof typeof seo, value: string) => {
          setSeo(prev => ({ ...prev, [key]: value }));
-    }
+    }, []);
 
     const handleSubmit = async () => {
         const newErrors: Record<string, boolean> = {};
@@ -259,6 +259,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             // Map form data strictly to Add Article API requirements
             const payload = {
                 headline: headLine, 
+                shortHead: shortHead, // Added short info back to the payload
                 content: content,
                 category: category,
                 language: language,
@@ -294,7 +295,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 space-y-2 sm:space-y-0">
                  <div className="flex items-center gap-4">
                     {isEditing && (
                          <Link href="/post/list">
@@ -303,12 +304,12 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                             </Button>
                         </Link>
                     )}
-                    <h2 className="text-3xl font-bold tracking-tight">{isEditing ? "Edit Post" : "Add Post"}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{isEditing ? "Edit Post" : "Add Post"}</h2>
                 </div>
             </div>
 
             {/* Basic Information Section */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
                 <Label className={cn(errors.language && "text-red-500")}>Language <span className="text-red-500">*</span></Label>
                 <Select onValueChange={setLanguage} value={language}>
@@ -357,7 +358,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 </Select>
                 {errors.category && <span className="text-xs text-red-500">Required</span>}
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
                 <Label>Sub Category</Label>
                 <Select value={subCategory} onValueChange={setSubCategory}>
                 <SelectTrigger>
@@ -368,8 +369,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                     <SelectItem value="web">Web Dev</SelectItem>
                 </SelectContent>
                 </Select>
-            </div>
-            <div className="space-y-2">
+            </div> */}
+            {/* <div className="space-y-2">
                 <Label className={cn(errors.date && "text-red-500")}>Release Date <span className="text-red-500">*</span></Label>
                 <Popover>
                 <PopoverTrigger asChild>
@@ -395,7 +396,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 </PopoverContent>
                 </Popover>
                 {errors.date && <span className="text-xs text-red-500">Required</span>}
-            </div>
+            </div> */}
             </div>
             
             <div className="grid gap-4 md:grid-cols-2">
@@ -426,9 +427,9 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             </div>
 
             <div className="space-y-2">
-                <Label>Short Head</Label>
+                <Label>Short Info</Label>
                 <Input 
-                    placeholder="Enter short headline" 
+                    placeholder="Enter short Details" 
                     value={shortHead}
                     onChange={(e) => setShortHead(e.target.value)}
                 />
@@ -454,8 +455,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                         AI Writer
                     </Button>
                 </div>
-                <div className="h-64 pb-12"> {/* Added padding for editor toolbar */}
-                    <ReactQuill theme="snow" value={content} onChange={setContent} className="h-full" />
+                <div className="h-[400px] sm:h-96 pb-12 mb-20"> {/* Extended height for rich editor */}
+                    <RichTextEditor value={content} onChange={handleContentChange} />
                 </div>
             </div>
 
@@ -471,9 +472,9 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                             onChange={(e) => setImagePreviewUrl(e.target.value)}
                         />
                         {imagePreviewUrl && (
-                            <div className="relative mt-2 w-40 h-24 rounded-md overflow-hidden border bg-muted flex items-center justify-center">
+                            <div className="relative mt-2 w-full sm:w-40 h-32 sm:h-24 rounded-md overflow-hidden border bg-muted flex items-center justify-center">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                <img src={imagePreviewUrl} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                 <Button
                                     variant="destructive"
                                     size="icon"
@@ -551,18 +552,12 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
             {/* Reporter Section */}
             <div className="space-y-2">
-                <Label className={cn(errors.reporter && "text-red-500")}>Reporter <span className="text-red-500">*</span></Label>
-                <Select onValueChange={setReporter} value={reporter}>
-                <SelectTrigger className={cn(errors.reporter && "border-red-500")}>
-                    <SelectValue placeholder="Select Reporter" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="john">John Doe</SelectItem>
-                    <SelectItem value="jane">Jane Smith</SelectItem>
-                    <SelectItem value="add_new">+ Add New</SelectItem>
-                </SelectContent>
-                </Select>
-                {errors.reporter && <span className="text-xs text-red-500">Required</span>}
+                <Label>Content Writer</Label>
+                <Input 
+                    value={reporter || "Current User"} // Fallback or rely on parent component mapping the logged-in user to initialData
+                    readOnly
+                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
             </div>
 
             {/* Post Settings */}
@@ -582,15 +577,14 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-4 pt-4">
-                <Button size="lg" onClick={handleSubmit} disabled={isSaving}>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-4 pt-4 pb-10">
+                <Link href="/post/list" className="w-full sm:w-auto">
+                    <Button variant="outline" size="lg" className="w-full">Cancel</Button>
+                </Link>
+                <Button size="lg" onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isSaving ? "Saving..." : (isEditing ? "Update Post" : "Save Post")}
                 </Button>
-                <Link href="/post/list">
-                    <Button variant="outline" size="lg">Cancel</Button>
-                </Link>
             </div>
         </div>
     );

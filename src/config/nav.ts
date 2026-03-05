@@ -9,7 +9,6 @@ import {
   Archive,
   Megaphone,
   Radio,
-  User,
   MessageSquare,
   BarChart,
   Video,
@@ -75,7 +74,7 @@ export const sidebarNav: SidebarNavGroup[] = [
             variant: "ghost",
           },
           {
-            title: "Breaking Post",
+            title: "Trending Post",
             href: "/post/breaking",
             icon: FileText,
             variant: "ghost",
@@ -183,12 +182,12 @@ export const sidebarNav: SidebarNavGroup[] = [
         icon: Gift,
         variant: "ghost",
       },
-      {
-        title: "Reporter",
-        href: "/reporter",
-        icon: User,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Reporter",
+      //   href: "/reporter",
+      //   icon: User,
+      //   variant: "ghost",
+      // },
     ],
   },
   {
