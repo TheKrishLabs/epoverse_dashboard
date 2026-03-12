@@ -278,6 +278,12 @@ export const sidebarNav: SidebarNavGroup[] = [
         variant: "ghost",
       },
       {
+        title: "Cookie Content",
+        href: "/settings/cookie-content",
+        icon: FileText,
+        variant: "ghost",
+      },
+      {
         title: "User Management",
         href: "#",
         icon: Users,
