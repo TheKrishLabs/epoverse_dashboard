@@ -15,7 +15,6 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Youtube from "@tiptap/extension-youtube";
 
-import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 
@@ -43,12 +42,21 @@ import {
   Code2,
   Type,
   Maximize,
-  Minimize
+  Minimize,
+  Table as TableIcon
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { TextStyle } from "@tiptap/extension-text-style";
-import { Table } from "@tiptap/extension-table";
+import { AdvancedTable } from "@/components/tiptap/advanced-table/table-extension";
+import { AdvancedTableRow } from "@/components/tiptap/advanced-table/row-extension";
 
 interface RichTextEditorProps {
   value: string;
@@ -197,6 +205,53 @@ const MenuBar = ({ editor, isSourceMode, onToggleSourceMode, isFullScreen, onTog
       </Button>
 
       <div className="w-[1px] bg-gray-300 dark:bg-gray-600 mx-1 h-6 self-center" />
+      
+      {/* Tables */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${editor.isActive("table") ? "bg-slate-200 dark:bg-slate-800" : ""}`}>
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+            Insert Table
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => editor.chain().focus().addColumnBefore().run()} disabled={!editor.isActive("table")}>
+            Add Column Before
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.isActive("table")}>
+            Add Column After
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.isActive("table")}>
+            Delete Column
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => editor.chain().focus().addRowBefore().run()} disabled={!editor.isActive("table")}>
+            Add Row Before
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.isActive("table")}>
+            Add Row After
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.isActive("table")}>
+            Delete Row
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => editor.chain().focus().mergeCells().run()} disabled={!editor.isActive("table")}>
+            Merge Cells
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().splitCell().run()} disabled={!editor.isActive("table")}>
+            Split Cell
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.isActive("table")} className="text-red-500 focus:text-red-500">
+            Delete Table
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <div className="w-[1px] bg-gray-300 dark:bg-gray-600 mx-1 h-6 self-center" />
 
       {/* Clear Formatting */}
       <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} className="h-8 w-8 p-0">
@@ -250,10 +305,10 @@ export const RichTextEditor = memo(function RichTextEditor({ value, onChange, cl
       Subscript,
       Superscript,
       Youtube,
-      Table.configure({
+      AdvancedTable.configure({
         resizable: true,
       }),
-      TableRow,
+      AdvancedTableRow,
       TableHeader,
       TableCell,
     ],
@@ -264,7 +319,7 @@ export const RichTextEditor = memo(function RichTextEditor({ value, onChange, cl
     },
     editorProps: {
       attributes: {
-        class: "prose dark:prose-invert max-w-none focus:outline-none min-h-[250px] p-4",
+        class: "prose dark:prose-invert max-w-none focus:outline-none min-h-[250px] p-4 tiptap",
       },
     },
   });
