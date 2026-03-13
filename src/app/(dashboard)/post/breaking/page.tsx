@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   Edit, 
   Trash2, 
@@ -10,7 +9,8 @@ import {
   Search, 
   ChevronLeft, 
   ChevronRight,
-  ArrowUpDown
+  ArrowUpDown,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -44,29 +44,17 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-// --- Types ---
-interface BreakingPost {
-  id: number;
-  post: string;
-  time: string; // ISO string
-  language: string;
-}
-
-// --- Mock Data ---
-const INITIAL_DATA: BreakingPost[] = [
-  { id: 1, post: "Breaking News: Major blockchain update released today.", time: "2024-05-20T10:30:00", language: "English" },
-  { id: 2, post: "Stock markets hit all-time high amidst global rally.", time: "2024-05-19T14:15:00", language: "English" },
-  { id: 3, post: "New agricultural policies announced by the government.", time: "2024-05-18T09:00:00", language: "Hindi" },
-  { id: 4, post: "Tech giant unveils latest AI model for public use.", time: "2024-05-17T16:45:00", language: "English" },
-  { id: 5, post: "Local sports team wins championship after 20 years.", time: "2024-05-16T20:00:00", language: "Tamil" },
-];
+import { trendingPostService, TrendingPost } from "@/services/trending-post-service";
+import { languageService, Language } from "@/services/language-service";
 
 export default function BreakingPostPage() {
   // --- State ---
-  const [posts, setPosts] = useState<BreakingPost[]>(INITIAL_DATA);
-  const [formData, setFormData] = useState({ language: "English", post: "" });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [posts, setPosts] = useState<TrendingPost[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({ language: "", post: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ language?: string; post?: string }>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -74,12 +62,36 @@ export default function BreakingPostPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof BreakingPost; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof TrendingPost; direction: 'asc' | 'desc' } | null>(null);
 
   // Delete Dialog State
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  // --- Initial Data Fetching ---
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [postsData, langsData] = await Promise.all([
+          trendingPostService.getTrendingPosts(),
+          languageService.getLanguages()
+        ]);
+        console.log("DEBUG: Trending Posts Data:", postsData);
+        console.log("DEBUG: Languages Data:", langsData);
+        setPosts(postsData);
+        setLanguages(langsData);
+        if (langsData.length > 0) {
+           setFormData(prev => ({ ...prev, language: langsData[0]._id }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // --- Handlers ---
 
@@ -96,81 +108,121 @@ export default function BreakingPostPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    if (editingId) {
-      // Update existing
-      setPosts(prev => prev.map(p => 
-        p.id === editingId 
-          ? { ...p, post: formData.post, language: formData.language, time: new Date().toISOString() } 
-          : p
-      ));
-      setSuccessMessage("Trending post updated successfully!");
-    } else {
-      // Create new
-      const newPost: BreakingPost = {
-        id: Date.now(),
-        post: formData.post,
-        language: formData.language,
-        time: new Date().toISOString(),
-      };
-      setPosts(prev => [newPost, ...prev]);
-      setSuccessMessage("Trending post added successfully!");
-    }
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        // Update existing
+        const updated = await trendingPostService.updateTrendingPost(editingId, {
+          language: formData.language,
+          post: formData.post
+        });
+        setPosts(prev => prev.map(p => p._id === editingId ? updated : p));
+        setSuccessMessage("Trending post updated successfully!");
+      } else {
+        // Create new
+        const created = await trendingPostService.addTrendingPost({
+          language: formData.language,
+          post: formData.post
+        });
+        setPosts(prev => [created, ...prev]);
+        setSuccessMessage("Trending post added successfully!");
+      }
 
-    // Reset form
-    handleReset();
-    
-    // Clear success message after 3 seconds
-    setTimeout(() => setSuccessMessage(null), 3000);
+      // Reset form
+      handleReset();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error("Failed to save trending post:", err);
+      alert("Failed to save trending post. Please check the console for details.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReset = () => {
-    setFormData({ language: "English", post: "" });
+    setFormData({ language: languages.length > 0 ? languages[0]._id : "", post: "" });
     setEditingId(null);
     setErrors({});
   };
 
-  const handleEdit = (post: BreakingPost) => {
-    setFormData({ language: post.language, post: post.post });
-    setEditingId(post.id);
+  const handleEdit = (post: TrendingPost) => {
+    const langId = typeof post.language === 'object' ? post.language._id : post.language;
+    setFormData({ language: langId, post: post.post });
+    setEditingId(post._id);
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to form
   };
 
-  const confirmDelete = (id: number) => {
+  const confirmDelete = (id: string) => {
     setDeleteId(id);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteId) {
-      setPosts(prev => prev.filter(p => p.id !== deleteId));
-      setSuccessMessage("Trending post deleted successfully!");
-      setIsDeleteDialogOpen(false);
-      setDeleteId(null);
-       setTimeout(() => setSuccessMessage(null), 3000);
+      try {
+        await trendingPostService.deleteTrendingPost(deleteId);
+        setPosts(prev => prev.filter(p => p._id !== deleteId));
+        setSuccessMessage("Trending post deleted successfully!");
+        setIsDeleteDialogOpen(false);
+        setDeleteId(null);
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } catch (err) {
+        console.error("Failed to delete trending post:", err);
+        alert("Failed to delete trending post.");
+      }
     }
   };
 
   // --- Table Logic ---
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getLanguageName = (lang: any) => {
+    if (typeof lang === 'object' && lang && lang.name) return lang.name;
+    if (typeof lang === 'string' && lang) {
+      const found = languages.find(l => l._id === lang);
+      return found ? found.name : lang;
+    }
+    return "N/A";
+  };
 
   // Filtering
-  const filteredPosts = posts.filter(post => 
-    post.post.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.language.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPosts = posts.filter(post => {
+    if (!post) return false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyPost = post as any;
+    const langName = getLanguageName(post.language);
+    const postContent = post.post || anyPost.headline || anyPost.headLine || anyPost.title || anyPost.content || "";
+    const search = searchQuery.toLowerCase();
+    
+    return String(postContent).toLowerCase().includes(search) ||
+           String(langName).toLowerCase().includes(search);
+  });
 
   // Sorting
   const sortedPosts = [...filteredPosts].sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
-    if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-    if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+    
+    let valA = a[key] || "";
+    let valB = b[key] || "";
+
+    // Handle nested language object for sorting
+    if (key === 'language') {
+      valA = getLanguageName(a.language);
+      valB = getLanguageName(b.language);
+    }
+
+    if (valA < valB) return direction === 'asc' ? -1 : 1;
+    if (valA > valB) return direction === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const requestSort = (key: keyof BreakingPost) => {
+  const requestSort = (key: keyof TrendingPost) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -189,6 +241,13 @@ export default function BreakingPostPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -220,10 +279,11 @@ export default function BreakingPostPage() {
                   <SelectValue placeholder="Select Language" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="Hindi">Hindi</SelectItem>
-                  <SelectItem value="Tamil">Tamil</SelectItem>
-                  <SelectItem value="Bengali">Bengali</SelectItem>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang._id} value={lang._id}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
                {errors.language && <span className="text-xs text-red-500">{errors.language}</span>}
@@ -245,15 +305,17 @@ export default function BreakingPostPage() {
           <div className="flex gap-2 pt-2">
             <Button 
                 onClick={handleSave}
+                disabled={isSaving}
                 className="bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800"
             >
-              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {editingId ? "Update" : "Save"}
             </Button>
             <Button 
                 variant="destructive" 
                 onClick={handleReset}
-                className="bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700"
+                disabled={isSaving}
+                className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
               Reset
@@ -292,7 +354,7 @@ export default function BreakingPostPage() {
                                     <ArrowUpDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
-                            <TableHead className="w-[180px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('time')}>
+                            <TableHead className="w-[180px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('createdAt' as keyof TrendingPost)}>
                                 <div className="flex items-center gap-1">
                                     Post Time
                                     <ArrowUpDown className="h-3 w-3" />
@@ -310,11 +372,16 @@ export default function BreakingPostPage() {
                     <TableBody>
                         {paginatedPosts.length > 0 ? (
                             paginatedPosts.map((post, index) => (
-                                <TableRow key={post.id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                <TableRow key={post._id || (post as any).id || index} className="hover:bg-muted/50 dark:hover:bg-muted/10">
                                     <TableCell>{startIndex + index + 1}</TableCell>
-                                    <TableCell className="font-medium">{post.post}</TableCell>
-                                    <TableCell>{format(new Date(post.time), "dd MMM yyyy, hh:mm a")}</TableCell>
-                                    <TableCell>{post.language}</TableCell>
+                                    <TableCell className="font-medium">
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                        {post.post || (post as any).headline || (post as any).headLine || (post as any).title || (post as any).content || "N/A"}
+                                    </TableCell>
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                    <TableCell>{(post.createdAt || (post as any).time || (post as any).date) ? format(new Date(post.createdAt || (post as any).time || (post as any).date), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
+                                    <TableCell>{getLanguageName(post.language)}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button 
@@ -329,7 +396,7 @@ export default function BreakingPostPage() {
                                                 size="icon" 
                                                 variant="ghost" 
                                                 className="h-8 w-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
-                                                onClick={() => confirmDelete(post.id)}
+                                                onClick={() => confirmDelete(post._id)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
