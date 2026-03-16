@@ -102,6 +102,7 @@ export default function PageListPage() {
 
       // 2. Language filter
       if (filters.languageId !== "all") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const langObj: any = page.language;
         const langId = typeof langObj === 'object' && langObj ? langObj._id : langObj;
         if (langId !== filters.languageId) return false;

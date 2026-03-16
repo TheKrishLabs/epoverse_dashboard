@@ -97,5 +97,9 @@ export const pollService = {
   deletePoll: async (id: string): Promise<boolean> => {
     await api.delete(`/polls/${id}`);
     return true;
+  },
+
+  togglePollStatus: async (id: string): Promise<PollData> => {
+    return api.patch<PollData>(`/polls/toggle-inactive/${id}`);
   }
 };

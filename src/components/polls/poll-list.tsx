@@ -32,7 +32,7 @@ export function PollList() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [pollToDelete, setPollToDelete] = useState<PollData | null>(null)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -53,11 +53,11 @@ export function PollList() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
   // Helper function to map language ID to language name safely
   const getLanguageName = useCallback((langValue: unknown) => {
@@ -101,16 +101,16 @@ export function PollList() {
     const pollId = poll.id || poll._id;
     if (!pollId) return;
     try {
-        // Optimistic UI approach or standard approach
         const newStatus = poll.status === 'Active' ? 'Inactive' : 'Active';
+        // Optimistic UI approach or standard approach
         setPolls(current => current.map(p => (p.id === pollId || p._id === pollId) ? { ...p, status: newStatus } : p));
-        await pollService.updatePoll(pollId, { status: newStatus });
+        await pollService.togglePollStatus(pollId);
     } catch (err) {
         console.error("Failed to toggle status", err);
         setError("Failed to toggle status");
         await fetchData(); // Revert back on error
     }
-  }, [])
+  }, [fetchData])
 
   const exportToCSV = () => {
       if (polls.length === 0) return;
