@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { CategoryForm } from "@/components/category-form";
 import { postService, Category } from "@/services/post-service";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface EditCategoryPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function EditCategoryPage({ params }: EditCategoryPageProps) {
+  const { id } = use(params);
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,14 +19,8 @@ export default function EditCategoryPage({ params }: EditCategoryPageProps) {
   useEffect(() => {
     const loadCategory = async () => {
         try {
-            // We don't have a direct getCategoryById yet in the service, 
-            // but we can find it from the list for now if needed.
-            // However, the backend likely supports GET /categories/:id
-            // Let's assume there's a way or use list if small.
-            // Checking existing postService methods... it has getCategories.
             const categories = await postService.getCategories();
-            const found = categories.find(c => c._id === params.id);
-            
+            const found = categories.find(c => c._id === id);
             if (found) {
                 setCategory(found);
             } else {
@@ -41,7 +34,7 @@ export default function EditCategoryPage({ params }: EditCategoryPageProps) {
         }
     };
     loadCategory();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
       return (

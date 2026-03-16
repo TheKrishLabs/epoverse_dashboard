@@ -1,18 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { PollForm } from "@/components/polls/poll-form"
 import { pollService, PollData } from "@/services/poll-service"
 import { Loader2 } from "lucide-react"
 
-export default function EditPollPage({ params }: { params: { id: string } }) {
+export default function EditPollPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [poll, setPoll] = useState<PollData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const data = await pollService.getPollById(params.id)
+        const data = await pollService.getPollById(id)
         if (data) {
           setPoll(data)
         }
@@ -23,10 +24,10 @@ export default function EditPollPage({ params }: { params: { id: string } }) {
       }
     }
 
-    if (params.id) {
+    if (id) {
       fetchPoll()
     }
-  }, [params.id])
+  }, [id])
 
   if (isLoading) {
     return (

@@ -1,19 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 
 import { opinionService, OpinionData } from "@/services/opinion-service"
 import { Loader2 } from "lucide-react"
 import { OpinionForm } from "@/components/opinions/opinion-form"
 
-export default function EditOpinionPage({ params }: { params: { id: string } }) {
+export default function EditOpinionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [opinion, setOpinion] = useState<OpinionData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchOpinion = async () => {
       try {
-        const data = await opinionService.getOpinionById(params.id)
+        const data = await opinionService.getOpinionById(id)
         if (data) {
           setOpinion(data)
         }
@@ -24,10 +25,10 @@ export default function EditOpinionPage({ params }: { params: { id: string } }) 
       }
     }
 
-    if (params.id) {
+    if (id) {
       fetchOpinion()
     }
-  }, [params.id])
+  }, [id])
 
   if (isLoading) {
     return (

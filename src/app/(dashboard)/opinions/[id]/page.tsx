@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Calendar, User, Globe, Eye, BadgeInfo, Tag, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,11 @@ import { languageService, Language } from "@/services/language-service";
 import { format } from "date-fns";
 
 interface ViewOpinionPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function ViewOpinionPage({ params }: ViewOpinionPageProps) {
+    const { id } = use(params);
     const [opinion, setOpinion] = useState<OpinionData | null>(null);
     const [languages, setLanguages] = useState<Language[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,7 +27,7 @@ export default function ViewOpinionPage({ params }: ViewOpinionPageProps) {
         const loadData = async () => {
             try {
                 const [opinionData, langData] = await Promise.all([
-                    opinionService.getOpinionById(params.id),
+                    opinionService.getOpinionById(id),
                     languageService.getLanguages()
                 ]);
 
@@ -46,7 +45,7 @@ export default function ViewOpinionPage({ params }: ViewOpinionPageProps) {
             }
         };
         loadData();
-    }, [params.id]);
+    }, [id]);
 
     const getLanguageName = (lang: string | { _id: string; name: string }) => {
         if (typeof lang === 'object' && lang && lang.name) return lang.name;
@@ -96,7 +95,7 @@ export default function ViewOpinionPage({ params }: ViewOpinionPageProps) {
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <Link href={`/opinions/${params.id}/edit`}>
+            <Link href={`/opinions/${id}/edit`}>
                 <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
                     <Eye className="mr-2 h-4 w-4" /> Edit Opinion
                 </Button>

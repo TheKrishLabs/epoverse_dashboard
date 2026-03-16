@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 // import { format } from "date-fns";
 import { ArrowLeft, Calendar, User, Globe, Eye } from "lucide-react";
@@ -13,23 +13,21 @@ import { Separator } from "@/components/ui/separator";
 
 
 interface ViewPostPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function ViewPostPage({ params }: ViewPostPageProps) {
+    const { id } = use(params);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [post, setPost] = useState<any>(null); // Use any or PostData
+    const [post, setPost] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadPost = async () => {
             try {
-                // Dynamically import service to ensure usage
                 const { postService } = await import("@/services/post-service");
-                const data = await postService.getArticleById(params.id);
+                const data = await postService.getArticleById(id);
                 if (data) {
                     setPost(data);
                 } else {
@@ -43,7 +41,7 @@ export default function ViewPostPage({ params }: ViewPostPageProps) {
             }
         };
         loadPost();
-    }, [params.id]);
+    }, [id]);
 
     if (loading) {
         return (

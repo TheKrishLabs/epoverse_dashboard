@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { Loader2, ArrowLeft, BarChart } from "lucide-react"
 import Link from "next/link"
 
@@ -8,32 +8,17 @@ import { pollService, PollData } from "@/services/poll-service"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export default function PollResultsPage({ params }: { params: { id: string } }) {
+export default function PollResultsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [poll, setPoll] = useState<PollData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const data = await pollService.getPollById(params.id)
+        const data = await pollService.getPollById(id)
         if (data) {
           setPoll(data)
-        } else {
-            // Mock data fallback if actual backend isn't returning data since we implemented mock data in poll list too
-            if (params.id === 'mock1' || params.id === 'mock2') {
-                 setPoll({
-                     language: "English",
-                     question: "What is your favorite color?",
-                     options: [
-                         { text: "Red", votes: 45 }, 
-                         { text: "Blue", votes: 85 },
-                         { text: "Green", votes: 20 },
-                         { text: "Yellow", votes: 12 }
-                     ],
-                     votePermission: "all" as const,
-                     status: "Active" as const,
-                 })
-            }
         }
       } catch (error) {
         console.error("Failed to fetch poll for results:", error)
@@ -42,10 +27,10 @@ export default function PollResultsPage({ params }: { params: { id: string } }) 
       }
     }
 
-    if (params.id) {
+    if (id) {
       fetchPoll()
     }
-  }, [params.id])
+  }, [id])
 
   if (isLoading) {
     return (
