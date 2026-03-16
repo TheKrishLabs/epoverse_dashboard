@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Filter, Loader2, Plus, RefreshCw, Search, X } from "lucide-react";
 import Link from "next/link";
 import { columns } from "./columns";
@@ -34,11 +34,7 @@ export default function CategoriesPage() {
     status: "all",
   });
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,7 +46,11 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   const clearFilters = () => {
     setFilters({
