@@ -88,11 +88,14 @@ export const postService = {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response: any = await api.get('/articles');
-        if (Array.isArray(response)) return response;
-        if (response && Array.isArray(response.data)) return response.data;
-        if (response && Array.isArray(response.articles)) return response.articles;
-        if (response && response.data && Array.isArray(response.data.articles)) return response.data.articles;
-        return [];
+        let items: Article[] = [];
+        if (Array.isArray(response)) items = response;
+        else if (response && Array.isArray(response.data)) items = response.data;
+        else if (response && Array.isArray(response.articles)) items = response.articles;
+        else if (response && response.data && Array.isArray(response.data.articles)) items = response.data.articles;
+        // Backend uses soft-delete (isDeleted: true) but still returns those records
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return items.filter((a: any) => !a.isDeleted);
       } catch (error) {
         console.error("Failed to fetch articles", error);
         throw error;
@@ -113,12 +116,15 @@ export const postService = {
         else if (response && Array.isArray(response.data)) items = response.data;
         else if (response && Array.isArray(response.articles)) items = response.articles;
 
-        // Fallback: Just in case the backend ignored our sorting/limiting params, we manually sort and slice client-side
-        items = items.sort((a, b) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA; // Descending
-        });
+        // Filter soft-deleted, sort and slice
+        items = items
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((a: any) => !a.isDeleted)
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
 
         return items.slice(0, limit);
     } catch (error) {
@@ -229,6 +235,16 @@ export const postService = {
   deletePost: async (id: string): Promise<boolean> => {
     await api.delete(`/posts/${id}`);
     return true;
+  },
+
+  deleteArticle: async (id: string): Promise<boolean> => {
+    try {
+      await api.delete(`/articles/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete article ${id}:`, error);
+      throw error;
+    }
   },
 
   downloadBulkTemplate: async (): Promise<Blob> => {
