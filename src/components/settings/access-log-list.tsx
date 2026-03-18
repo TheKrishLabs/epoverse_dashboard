@@ -1,24 +1,32 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, Calendar } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AccessLog, accessLogService } from "@/services/access-log-service"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function AccessLogList() {
   const [logs, setLogs] = useState<AccessLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [range, setRange] = useState<string>("today")
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async (selectedRange: string) => {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await accessLogService.getLogs()
+      const data = await accessLogService.getLogs(selectedRange)
       setLogs(data || [])
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -29,11 +37,11 @@ export function AccessLogList() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchLogs()
-  }, [])
+    fetchLogs(range)
+  }, [range, fetchLogs])
 
   const columns = useMemo<ColumnDef<AccessLog>[]>(
     () => [
@@ -154,6 +162,23 @@ export function AccessLogList() {
     <div className="space-y-4 p-4 md:p-6 bg-white dark:bg-sidebar rounded-lg shadow-sm border border-border">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-lg font-semibold text-foreground">Access Logs</h2>
+        
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="yesterday">Yesterday</SelectItem>
+              <SelectItem value="last7days">Last 7 Days</SelectItem>
+              <SelectItem value="last30days">Last 30 Days</SelectItem>
+              <SelectItem value="thisMonth">This Month</SelectItem>
+              <SelectItem value="lastMonth">Last Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && (

@@ -101,10 +101,34 @@ export function PollList() {
     const pollId = poll.id || poll._id;
     if (!pollId) return;
     try {
-        const newStatus = poll.status === 'Active' ? 'Inactive' : 'Active';
-        // Optimistic UI approach or standard approach
-        setPolls(current => current.map(p => (p.id === pollId || p._id === pollId) ? { ...p, status: newStatus } : p));
-        await pollService.togglePollStatus(pollId);
+        // Toggle based on either isActive (backend) or status (frontend)
+        const isCurrentActive = poll.isActive !== undefined ? poll.isActive : poll.status === 'Active';
+        const newIsActive = !isCurrentActive;
+        const newStatus = newIsActive ? 'Active' : 'Inactive';
+        
+        // Optimistic UI update
+        setPolls(current => current.map(p => {
+          if (p.id === pollId || p._id === pollId) {
+            return { ...p, status: newStatus, isActive: newIsActive };
+          }
+          return p;
+        }));
+        
+        const updatedPoll = await pollService.togglePollStatus(pollId);
+        
+        // Final sync with backend response
+        if (updatedPoll) {
+          setPolls(current => current.map(p => {
+            if (p.id === pollId || p._id === pollId) {
+              // Map backend isActive to status for list consistency
+              const mappedStatus = updatedPoll.isActive !== undefined 
+                ? (updatedPoll.isActive ? 'Active' : 'Inactive') 
+                : updatedPoll.status;
+              return { ...p, ...updatedPoll, status: mappedStatus as 'Active' | 'Inactive' };
+            }
+            return p;
+          }));
+        }
     } catch (err) {
         console.error("Failed to toggle status", err);
         setError("Failed to toggle status");
@@ -240,17 +264,25 @@ export function PollList() {
             )
         },
         cell: ({ row }) => {
-            const status = row.getValue("status") as string;
+            const poll = row.original;
+            // Support both isActive and status fields
+            const isActive = poll.isActive !== undefined ? poll.isActive : poll.status === 'Active';
+            const displayStatus = isActive ? "Active" : "Inactive";
+            
             return (
                 <div className="flex items-center" >
                   <button 
-                    onClick={() => toggleStatus(row.original)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent any parent action
+                      toggleStatus(poll);
+                    }}
+                    type="button" // CRITICAL: Prevent form submission if any
                     className="flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-sm overflow-hidden"
-                    title={`Toggle ${status === 'Active' ? 'Inactive' : 'Active'}`}
+                    title={`Toggle ${isActive ? 'Inactive' : 'Active'}`}
                   >
                      <div className="flex items-center">
-                        <Badge className={`${status === "Active" ? "bg-[#198754] flex items-center justify-center font-semibold text-[11px] px-2.5 py-0.5 rounded-full" : "bg-red-500 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-full"}`}>
-                            {status || "Inactive"}
+                        <Badge className={`${isActive ? "bg-[#198754] flex items-center justify-center font-semibold text-[11px] px-2.5 py-0.5 rounded-full" : "bg-red-500 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-full"}`}>
+                            {displayStatus}
                         </Badge>
                      </div>
                   </button>

@@ -14,8 +14,11 @@ export interface PollData {
   question: string;
   options: PollOption[];
   votePermission: 'all' | 'registered';
-  status: 'Active' | 'Inactive'; // Typically consistent with string representation
+  status: 'Active' | 'Inactive'; 
+  isActive?: boolean;
+  isDeleted?: boolean;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 // Ensure proper backend payload type mapping based on possible endpoint requirements
@@ -26,20 +29,20 @@ export const pollService = {
         const response = await api.get<any>('/polls');
       console.log("Raw Polls Response:", response);
       
-      // Handle wrappers like { success: true, polls: [...], data: [...] }
-      if (Array.isArray(response)) return response;
-      if (response && typeof response === 'object') {
-          // Check for data or polls key first
-          if (Array.isArray(response.data)) return response.data;
-          if (Array.isArray(response.polls)) return response.polls;
-          if (Array.isArray(response.items)) return response.items;
-          
-          // Fallback: find the first array property
-          const firstArray = Object.values(response).find(val => Array.isArray(val));
-          if (firstArray) return firstArray as PollData[];
+      let items: PollData[] = [];
+      if (Array.isArray(response)) items = response;
+      else if (response && typeof response === 'object') {
+          if (Array.isArray(response.data)) items = response.data;
+          else if (Array.isArray(response.polls)) items = response.polls;
+          else if (Array.isArray(response.items)) items = response.items;
+          else {
+              const firstArray = Object.values(response).find(val => Array.isArray(val));
+              if (firstArray) items = firstArray as PollData[];
+          }
       }
       
-      return [];
+      // Filter out deleted polls
+      return items.filter(p => !p.isDeleted);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch(error: any) {
         console.warn("API failed. Falling back to empty array.", error);
@@ -100,6 +103,8 @@ export const pollService = {
   },
 
   togglePollStatus: async (id: string): Promise<PollData> => {
-    return api.patch<PollData>(`/polls/toggle-inactive/${id}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await api.patch<any>(`/polls/toggle-inactive/${id}`);
+    return response?.data?.poll || response?.poll || response;
   }
 };
