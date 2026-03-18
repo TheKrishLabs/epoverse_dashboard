@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { storyService } from "@/services/story-service";
-import { mediaService } from "@/services/media-service";
 import { languageService, Language } from "@/services/language-service";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -137,36 +136,21 @@ export default function StoryCreatePage() {
 
     setIsSaving(true);
     try {
-        const items = [];
-        for (const story of tempStories) {
-            // 1. Pre-upload image
-            const formData = new FormData();
-            formData.append("file", story.imageFile);
-            formData.append("thumbHeight", "240");
-            formData.append("thumbWidth", "438");
-            formData.append("largeHeight", "585");
-            formData.append("largeWidth", "1067");
-            
-            const uploadRes = await mediaService.uploadPhoto(formData);
-            const imageUrl = uploadRes.data?.url || uploadRes.data?.thumbnailUrl || "";
+        // 1. Construct FormData for the create endpoint
+        const formData = new FormData();
+        formData.append("title", tempStories[0].title);
+        formData.append("language", tempStories[0].language); // lowercase root field
 
-            // 2. Queue for Story batch
-            items.push({
-                title: story.title,
-                Language: story.language, // Backend expects capitalized "Language" as Mongo ID
-                buttonText: story.buttonText,
-                buttonLink: story.buttonLink,
-                Image: imageUrl,        // Backend expects capitalized "Image"
-                storyImage: imageUrl    // Backend expects "storyImage" as string
-            });
-        }
-
-        // 3. Dispatch array to create endpoint
-        await storyService.createStory({
-            title: tempStories[0].title, 
-            Language: tempStories[0].language,
-            items 
+        tempStories.forEach((story, index) => {
+            formData.append(`items[${index}][title]`, story.title);
+            formData.append(`items[${index}][language]`, story.language);
+            formData.append(`items[${index}][buttonText]`, story.buttonText);
+            formData.append(`items[${index}][buttonLink]`, story.buttonLink);
+            // Attach the File object directly to storyImage
+            formData.append(`items[${index}][storyImage]`, story.imageFile);
         });
+
+        await storyService.createStory(formData);
 
         setSuccess("Stories saved successfully!");
         setTempStories([]);
