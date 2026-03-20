@@ -64,7 +64,7 @@ export function AccessLogList() {
         enableHiding: false,
       },
       {
-        accessorKey: "user",
+        id: "employeeName",
         header: ({ column }) => {
           return (
             <Button
@@ -72,15 +72,16 @@ export function AccessLogList() {
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="px-0 font-semibold"
             >
-              User
+              Employee Name
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           )
         },
-        cell: ({ row }) => <div>{row.getValue("user")}</div>,
+        accessorFn: (row) => row.employeeId?.fullName || "-",
+        cell: ({ row }) => <div>{row.getValue("employeeName")}</div>,
       },
       {
-        accessorKey: "email",
+        id: "role",
         header: ({ column }) => {
           return (
             <Button
@@ -88,15 +89,16 @@ export function AccessLogList() {
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="px-0 font-semibold"
             >
-              Email
+              Role
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           )
         },
-        cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("email")}</div>,
+        accessorFn: (row) => row.roleId?.name || "-",
+        cell: ({ row }) => <div>{row.getValue("role")}</div>,
       },
       {
-        accessorKey: "loginTime",
+        accessorKey: "logName",
         header: ({ column }) => {
           return (
             <Button
@@ -104,55 +106,38 @@ export function AccessLogList() {
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="px-0 font-semibold"
             >
-              Login Time
+              Log Name
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+        cell: ({ row }) => <div>{row.getValue("logName")}</div>,
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => <div className="max-w-[400px] whitespace-normal" title={row.getValue("description")}>{row.getValue("description")}</div>,
+      },
+      {
+        accessorKey: "dateTime",
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="px-0 font-semibold"
+            >
+              Date & Time
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           )
         },
         cell: ({ row }) => {
-          const dateStr = row.getValue("loginTime") as string
+          const dateStr = row.getValue("dateTime") as string
           if (!dateStr) return <div>-</div>
           const date = new Date(dateStr)
           return <div>{date.toLocaleString()}</div>
         },
-      },
-      {
-        accessorKey: "logoutTime",
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="px-0 font-semibold"
-            >
-              Logout Time
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          )
-        },
-        cell: ({ row }) => {
-          const dateStr = row.getValue("logoutTime") as string | null
-          if (!dateStr) return <div className="italic text-gray-500">Active session</div>
-          const date = new Date(dateStr)
-          return <div>{date.toLocaleString()}</div>
-        },
-      },
-      {
-        accessorKey: "ipAddress",
-        header: "IP Address",
-        cell: ({ row }) => <div>{row.getValue("ipAddress")}</div>,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.getValue("status") as string;
-          return (
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === "Failed" ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {status}
-            </span>
-          )
-        }
       },
     ],
     []

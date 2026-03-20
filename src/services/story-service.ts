@@ -94,7 +94,7 @@ export const storyService = {
   updateStory: async (id: number | string, updates: any): Promise<StoryData | null> => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await api.put(`/story/${id}`, updates);
+      const response: any = await api.patch(`/story/item/${id}`, updates);
       const item = response.data || response;
       return {
         ...item,
@@ -146,25 +146,6 @@ export const storyService = {
     }
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateStoryItem: async (itemId: string, updates: any): Promise<StoryItem> => {
-    try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response: any = await api.patch(`/story/item/${itemId}`, updates);
-        const item = response.data || response;
-        return {
-            _id: item._id || item.id || itemId,
-            title: item.title || '',
-            language: item.language?.name || item.language || '',
-            buttonText: item.buttonText || '',
-            buttonLink: item.buttonLink || '',
-            image: item.image || item.storyImage || '',
-            storyImage: item.storyImage || item.image || '',
-            viewCount: Number(item.viewCount || 0),
-        };
-    } catch (error) {
-        console.error(`Failed to update story item ${itemId}`, error);
-        throw error;
-    }
-  }
+ 
+ 
 };

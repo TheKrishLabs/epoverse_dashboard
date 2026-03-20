@@ -6,7 +6,6 @@ import { Sparkles, X, ArrowLeft, Loader2, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { postService, Category } from "@/services/post-service";
-import { authService } from "@/services/auth-service";
 import { languageService, Language } from "@/services/language-service";
 
 import { cn } from "@/lib/utils";
@@ -193,7 +192,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         return d?.shortDescription || d?.shortHead || d?.shortInfo || "";
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [reporter, setReporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
+    const [reporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
 
     // SEO & Settings State
     const [settings, setSettings] = useState(() => {

@@ -66,6 +66,7 @@ export default function StoryManagePage() {
 
   // Edit Item Modal State
   const [editItem, setEditItem] = useState<StoryItem | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [isSavingItem, setIsSavingItem] = useState(false);
 
@@ -128,6 +129,7 @@ export default function StoryManagePage() {
 
   const handleEditItem = (item: StoryItem) => {
     setEditItem({ ...item });
+    setEditImageFile(null);
     setIsEditItemOpen(true);
   };
 
@@ -135,17 +137,29 @@ export default function StoryManagePage() {
     if (!editItem) return;
     setIsSavingItem(true);
     try {
-        const updated = await storyService.updateStoryItem(editItem._id, {
-            title: editItem.title,
-            buttonText: editItem.buttonText,
-            buttonLink: editItem.buttonLink,
-        });
+        let updates: FormData | { title?: string; buttonText?: string; buttonLink?: string };
+        if (editImageFile) {
+            updates = new FormData();
+            updates.append("title", editItem.title || "");
+            updates.append("buttonText", editItem.buttonText || "");
+            updates.append("buttonLink", editItem.buttonLink || "");
+            updates.append("storyImage", editImageFile);
+        } else {
+            updates = {
+                title: editItem.title,
+                buttonText: editItem.buttonText,
+                buttonLink: editItem.buttonLink,
+            };
+        }
+
+        const updated = await storyService.updateStory(editItem._id, updates) as unknown as StoryItem;
         
         // Update local items list
         setViewItems(prev => prev.map(item => item._id === updated._id ? updated : item));
         setSuccessMessage("Story item updated successfully!");
         setIsEditItemOpen(false);
         setEditItem(null);
+        setEditImageFile(null);
         setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
         console.error("Failed to update story item", error);
@@ -580,13 +594,27 @@ export default function StoryManagePage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
+           <div className="grid gap-4 py-4">
              <div className="space-y-2">
                 <Label htmlFor="item-title">Title</Label>
                 <Input 
                     id="item-title" 
                     value={editItem?.title || ""} 
                     onChange={(e) => setEditItem(prev => prev ? { ...prev, title: e.target.value } : null)}
+                />
+             </div>
+             <div className="space-y-2">
+                <Label htmlFor="item-image">Background Image</Label>
+                <Input 
+                    id="item-image" 
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            setEditImageFile(file);
+                        }
+                    }}
                 />
              </div>
              <div className="space-y-2">

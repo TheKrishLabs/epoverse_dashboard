@@ -36,10 +36,13 @@ export const pageService = {
 
   getPageById: async (id: string): Promise<PageData | undefined> => {
     try {
-        const pages = await pageService.getPages();
-        const page = pages.find(p => p._id === id || p.id === id);
-        return page;
-    } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response: any = await api.get(`/pages/${id}`);
+        const data = response.data || response;
+        return data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) return undefined;
         console.error("Error finding page by ID:", error);
         throw error;
     }

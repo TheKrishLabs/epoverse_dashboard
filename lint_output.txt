@@ -3,44 +3,25 @@
 > eslint
 
 
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\app\(dashboard)\post\edit\[id]\page.tsx
-  16:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\app\(dashboard)\categories\columns.tsx
+  4:34  warning  'Trash2' is defined but never used  @typescript-eslint/no-unused-vars
 
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\app\(dashboard)\post\view\[id]\page.tsx
-   6:10  warning  'format' is defined but never used         @typescript-eslint/no-unused-vars
-   7:37  warning  'Tag' is defined but never used            @typescript-eslint/no-unused-vars
-   7:49  warning  'MessageSquare' is defined but never used  @typescript-eslint/no-unused-vars
-  22:38  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\app\(dashboard)\page-builder\view\[id]\page.tsx
+  38:33  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\components\auth\AuthPage.tsx
-   95:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  114:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\components\auth\LoginForm.tsx
-  50:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\components\auth\SignupForm.tsx
-  57:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\app\(dashboard)\story\page.tsx
+  155:82  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\components\post-form.tsx
-    4:20  warning  'useEffect' is defined but never used      @typescript-eslint/no-unused-vars
-    6:24  warning  'Upload' is defined but never used         @typescript-eslint/no-unused-vars
-   98:11  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  111:25  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  111:70  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  120:87  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  122:87  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  130:34  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  132:33  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  136:32  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  137:34  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
-  138:38  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+    9:10  warning  'authService' is defined but never used           @typescript-eslint/no-unused-vars
+  196:22  warning  'setReporter' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\src\components\ui\data-table.tsx
-  17:64  warning  'Filter' is defined but never used  @typescript-eslint/no-unused-vars
+C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\tmp\debug_logs.ts
+  23:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\test-proxy.js
-  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+C:\Users\orang\OneDrive\Desktop\krishLab nn\project_epoverse_dashboard\tmp\debug_poll.ts
+  29:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  37:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-Ô£û 23 problems (16 errors, 7 warnings)
+Ô£û 8 problems (4 errors, 4 warnings)
 

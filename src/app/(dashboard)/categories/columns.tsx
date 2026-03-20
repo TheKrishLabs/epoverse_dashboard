@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Edit, Eye, Trash2 } from "lucide-react";
+import { ArrowUpDown, Edit, Eye } from "lucide-react";
 import Link from "next/link";
 import { Category } from "@/services/post-service";
 import { Badge } from "@/components/ui/badge";
