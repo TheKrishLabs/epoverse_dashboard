@@ -206,9 +206,9 @@ export const postService = {
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateArticle: async (id: string, payload: any): Promise<any> => {
+  updateArticle: async (id: string, payload: FormData | any): Promise<any> => {
     try {
-        console.log(`Updating article ${id} with payload:`, payload);
+        console.log(`Updating article ${id} with FormData:`, payload instanceof FormData);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response: any = await api.put(`/articles/${id}`, payload);
         console.log(`Update Article (${id}) Response:`, response);
