@@ -2,20 +2,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/auth"];
+const adminRoutes = ["/settings", "/theme", "/web-setup", "/role-and-permission"];
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("authToken")?.value;
+  const userRole = request.cookies.get("userRole")?.value;
   const { pathname } = request.nextUrl;
   
-  console.log(`[Middleware] Processing: ${pathname} | Token present: ${!!token}`);
+  console.log(`[Middleware] Processing: ${pathname} | Token: ${!!token} | Role: ${userRole || 'none'}`);
 
-  // Paths that require authentication
-  const isProtectedRoute = pathname.startsWith("/dashboard");
-
-  // Paths that are only for public/unauthenticated users (e.g., login)
-  const isAuthRoute = pathname === "/login" || pathname === "/auth";
+  const isPublicRoute = publicRoutes.includes(pathname);
+  const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
 
   // 1. If trying to access a protected route without a token -> Redirect to Login
-  if (isProtectedRoute && !token) {
+  if (!isPublicRoute && !token) {
     const loginUrl = new URL("/login", request.url);
     // Optional: Add ?from=... to redirect back after login
     loginUrl.searchParams.set("from", pathname);
@@ -23,7 +24,13 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. If trying to access login/auth route WITH a token -> Redirect to Dashboard
-  if (isAuthRoute && token) {
+  if (isPublicRoute && token && (pathname === "/login" || pathname === "/" || pathname === "/register")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // 3. RBAC: Restrict admin routes to admin role
+  if (isAdminRoute && userRole !== "admin") {
+    console.log(`[Middleware] Access Denied: User role '${userRole}' cannot access ${pathname}`);
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

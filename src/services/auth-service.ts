@@ -79,6 +79,10 @@ export const authService = {
       console.log("Saving user to localStorage:", userToStore);
       localStorage.setItem("user", JSON.stringify(userToStore));
 
+      if (userToStore.role) {
+        document.cookie = `userRole=${userToStore.role}; path=/; max-age=86400; SameSite=Strict`;
+      }
+
       return data;
     } catch (error: unknown) {
       console.error("Login Service Error Detailed:", error);
@@ -111,6 +115,7 @@ export const authService = {
     localStorage.removeItem("user");
     // Clear cookies with all potential path/domain combinations to be safe
     document.cookie = "authToken=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "userRole=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     window.location.href = "/login";
   },
 
