@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import 'ckeditor5/ckeditor5.css';
+import type * as CKEditorModule from 'ckeditor5';
+import type { Editor, Locale, EditorConfig } from 'ckeditor5';
 
 interface CKEditorComponentProps {
     value: string;
@@ -79,13 +81,12 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
         TableProperties, TableToolbar, TextTransformation,
         Underline, Undo, SourceEditing, WordCount,
         ButtonView, Plugin
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } = EditorModule as any;
+    } = EditorModule as typeof CKEditorModule;
 
     class FullScreen extends Plugin {
         init() {
             const editor = this.editor;
-            editor.ui.componentFactory.add('fullscreen', (locale: any) => {
+            editor.ui.componentFactory.add('fullscreen', (locale: Locale) => {
                 const view = new ButtonView(locale);
                 
                 // SVG for Maximize/Minimize (Lucide-inspired)
@@ -111,7 +112,7 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                     label: isFullScreen ? 'Exit Full Screen' : 'Full Screen',
                     icon: isFullScreen ? minimizeIcon : maximizeIcon,
                     tooltip: true,
-                    isOff: !isFullScreen
+                    isOn: isFullScreen
                 });
 
                 view.on('execute', () => {
@@ -219,11 +220,9 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
         <div className={`ck5-wrapper ${isFullScreen ? 'ck5-fullscreen' : ''}`}>
             <CKEditorUI
                 editor={ClassicEditor}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                config={editorConfig as any}
+                config={editorConfig as EditorConfig}
                 data={value}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onReady={(editor: any) => {
+                onReady={(editor: Editor) => {
                     try {
                         const wordCountPlugin = editor.plugins.get('WordCount');
                         const wcEl = document.getElementById('ck5-word-count');
@@ -235,8 +234,7 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                         // word count optional
                     }
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onChange={(_evt: any, editor: any) => {
+                onChange={(evt: unknown, editor: Editor) => {
                     onChange(editor.getData());
                 }}
             />
