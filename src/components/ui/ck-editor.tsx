@@ -15,6 +15,21 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [EditorModule, setEditorModule] = useState<any>(null);
     const [isReady, setIsReady] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isFullScreen) {
+                setIsFullScreen(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isFullScreen]);
+
+    const toggleFullScreen = () => {
+        setIsFullScreen(prev => !prev);
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -63,8 +78,50 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
         Table, TableCaption, TableCellProperties, TableColumnResize,
         TableProperties, TableToolbar, TextTransformation,
         Underline, Undo, SourceEditing, WordCount,
+        ButtonView, Plugin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = EditorModule as any;
+
+    class FullScreen extends Plugin {
+        init() {
+            const editor = this.editor;
+            editor.ui.componentFactory.add('fullscreen', (locale: any) => {
+                const view = new ButtonView(locale);
+                
+                // SVG for Maximize/Minimize (Lucide-inspired)
+                const maximizeIcon = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                `;
+                
+                const minimizeIcon = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 14 10 14 10 20"></polyline>
+                        <polyline points="20 10 14 10 14 4"></polyline>
+                        <line x1="14" y1="10" x2="21" y2="3"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                `;
+
+                view.set({
+                    label: isFullScreen ? 'Exit Full Screen' : 'Full Screen',
+                    icon: isFullScreen ? minimizeIcon : maximizeIcon,
+                    tooltip: true,
+                    isOff: !isFullScreen
+                });
+
+                view.on('execute', () => {
+                    toggleFullScreen();
+                });
+
+                return view;
+            });
+        }
+    }
 
     const editorConfig = {
         licenseKey: 'GPL',
@@ -84,7 +141,7 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                 'heading', '|',
                 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
                 'codeBlock', '|',
-                'accessibilityHelp',
+                'accessibilityHelp', 'fullscreen'
             ],
             shouldNotGroupWhenFull: false,
         },
@@ -104,6 +161,7 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
             Table, TableCaption, TableCellProperties, TableColumnResize,
             TableProperties, TableToolbar, TextTransformation,
             Underline, Undo, SourceEditing, WordCount,
+            FullScreen
         ],
         heading: {
             options: [
@@ -158,7 +216,7 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
     };
 
     return (
-        <div className="ck5-wrapper">
+        <div className={`ck5-wrapper ${isFullScreen ? 'ck5-fullscreen' : ''}`}>
             <CKEditorUI
                 editor={ClassicEditor}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,6 +313,49 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                 .ck5-wordcount .ck-word-count {
                     display: flex;
                     gap: 1rem;
+                }
+
+                /* ── Full Screen Mode ───────────────────────────── */
+                .ck5-wrapper.ck5-fullscreen {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    z-index: 9999 !important;
+                    border-radius: 0 !important;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .ck5-wrapper.ck5-fullscreen .ck-editor {
+                    flex: 1;
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                .ck5-wrapper.ck5-fullscreen .ck-editor__main {
+                    flex: 1;
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                .ck5-wrapper.ck5-fullscreen .ck-editor__main > .ck-editor__editable {
+                    flex: 1;
+                    min-height: unset !important;
+                    max-height: unset !important;
+                    border-radius: 0 !important;
+                }
+                .ck5-wrapper.ck5-fullscreen .ck-source-editing-area {
+                    flex: 1;
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                .ck5-wrapper.ck5-fullscreen .ck-source-editing-area > textarea {
+                    flex: 1;
+                    min-height: unset !important;
+                }
+
+                /* Ensure dropdowns stay on top in fullscreen */
+                .ck.ck-body-wrapper {
+                    z-index: 10000 !important;
                 }
 
                 /* ── Content styles ─────────────────────────────── */
