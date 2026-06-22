@@ -20,6 +20,14 @@ export interface UserResponse {
 }
 
 
+// MOCK DATA for Users
+const mockUsers: User[] = [
+  { _id: '1', fullName: 'essa essa', email: 'essa@test.com', phoneNumber: '7777777', role: { _id: '2', name: 'Reporter' }, status: 'Active', createdAt: '2026-01-30T20:24:00Z' },
+  { _id: '2', fullName: 'Joel', email: 'joel@gmail.com', phoneNumber: '9049885903', role: 'Reporter', status: 'Active', createdAt: '2025-12-28T18:53:00Z' },
+  { _id: '3', fullName: 'ANKET KUMAR', email: 'ankit@gmail.com', phoneNumber: '9770683852', role: 'Reporter', status: 'Active', createdAt: '2025-11-29T17:42:00Z' },
+  { _id: '4', fullName: 'ashish', email: 'ashish@gmail.com', phoneNumber: '9685748596', role: 'Reporter', status: 'Active', createdAt: '2025-11-14T21:40:00Z' },
+  { _id: '6', fullName: 'sanjid', email: '', phoneNumber: '', role: 'Reporter', status: 'Active', createdAt: '2025-07-30T18:05:00Z' },
+];
 
 export const userService = {
   /**
