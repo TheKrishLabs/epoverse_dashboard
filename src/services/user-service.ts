@@ -19,14 +19,7 @@ export interface UserResponse {
   user?: User; // for single user operations
 }
 
-// MOCK DATA for Users
-const mockUsers: User[] = [
-  { _id: '1', fullName: 'essa essa', email: 'essa@test.com', phoneNumber: '7777777', role: { _id: '2', name: 'Reporter' }, status: 'Active', createdAt: '2026-01-30T20:24:00Z' },
-  { _id: '2', fullName: 'Joel', email: 'joel@gmail.com', phoneNumber: '9049885903', role: 'Reporter', status: 'Active', createdAt: '2025-12-28T18:53:00Z' },
-  { _id: '3', fullName: 'ANKET KUMAR', email: 'ankit@gmail.com', phoneNumber: '9770683852', role: 'Reporter', status: 'Active', createdAt: '2025-11-29T17:42:00Z' },
-  { _id: '4', fullName: 'ashish', email: 'ashish@gmail.com', phoneNumber: '9685748596', role: 'Reporter', status: 'Active', createdAt: '2025-11-14T21:40:00Z' },
-  { _id: '6', fullName: 'sanjid', email: '', phoneNumber: '', role: 'Reporter', status: 'Active', createdAt: '2025-07-30T18:05:00Z' },
-];
+
 
 export const userService = {
   /**
@@ -52,7 +45,7 @@ export const userService = {
   getUserById: async (id: string): Promise<User> => {
     try {
       const response = await api.get<{ data?: User } | User>(`/users/${id}`);
-      
+
       // Handle potential wrapped response structures
       if (response && 'data' in response && response.data) {
         return response.data;
@@ -96,29 +89,25 @@ export const userService = {
    * Delete a user
    */
   deleteUser: async (id: string): Promise<UserResponse> => {
-    return new Promise((resolve, reject) => setTimeout(() => {
-      const index = mockUsers.findIndex(u => u._id === id);
-      if (index > -1) {
-        const deleted = mockUsers.splice(index, 1)[0];
-        resolve({ success: true, message: 'User deleted successfully', data: mockUsers, user: deleted });
-      } else {
-        reject(new Error('User not found'));
-      }
-    }, 800));
+    try {
+      const response = await api.delete<UserResponse>(`/users/${id}`);
+      return response;
+    } catch (error) {
+      console.error(`Error deleting user ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
    * Update user status explicitly
    */
   updateStatus: async (id: string, status: 'Active' | 'Inactive'): Promise<UserResponse> => {
-    return new Promise((resolve, reject) => setTimeout(() => {
-      const index = mockUsers.findIndex(u => u._id === id);
-      if (index > -1) {
-        mockUsers[index].status = status;
-        resolve({ success: true, message: 'User status updated successfully', data: mockUsers, user: mockUsers[index] });
-      } else {
-        reject(new Error('User not found'));
-      }
-    }, 500));
+    try {
+      const response = await api.put<UserResponse>(`/users/${id}/status`, { status });
+      return response;
+    } catch (error) {
+      console.error(`Error updating user status ${id}:`, error);
+      throw error;
+    }
   }
 };
