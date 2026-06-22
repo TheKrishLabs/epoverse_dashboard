@@ -1,0 +1,227 @@
+[
+  {
+    "_id": "6997045cc16953eb6e8d4c60",
+    "name": "test role",
+    "permissions": {
+      "advertisement": [
+        "read",
+        "create",
+        "update"
+      ],
+      "analytics": [
+        "read",
+        "create"
+      ],
+      "dashboard": [
+        "read"
+      ],
+      "media": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ]
+    },
+    "createdAt": "2026-02-19T12:38:53.001Z",
+    "updatedAt": "2026-02-20T08:44:10.150Z",
+    "__v": 0,
+    "isDeleted": false
+  },
+  {
+    "_id": "6997f9a40bbb5ea497ca44e4",
+    "name": "Admin role",
+    "permissions": {
+      "advertisement": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ],
+      "analytics": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ],
+      "dashboard": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ]
+    },
+    "isDeleted": false,
+    "createdAt": "2026-02-20T06:05:24.202Z",
+    "updatedAt": "2026-02-20T06:05:24.202Z",
+    "__v": 0
+  },
+  {
+    "_id": "69981f12dab88df7ed4fb19a",
+    "name": "admin",
+    "permissions": {
+      "advertisement": [
+        "read",
+        "create",
+        "update"
+      ],
+      "analytics": [
+        "read",
+        "create"
+      ],
+      "dashboard": [
+        "read"
+      ],
+      "media": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ]
+    },
+    "isDeleted": false,
+    "createdAt": "2026-02-20T08:45:06.890Z",
+    "updatedAt": "2026-02-20T08:45:06.890Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c01d4f72d081d4672a575",
+    "name": "edsc",
+    "permissions": {},
+    "isDeleted": false,
+    "createdAt": "2026-02-23T07:29:24.812Z",
+    "updatedAt": "2026-02-23T07:29:24.812Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c5ad57ac0e480b90dd7c9",
+    "name": "ADMIN",
+    "permissions": {
+      "dashboard": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "advertisement": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "analytics": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "archive": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "category": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "comments": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "media_library": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "menu": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "news": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "page": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "reporter": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "seo": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "setting": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ],
+      "theme_setup": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    },
+    "isDeleted": false,
+    "createdAt": "2026-02-23T13:49:09.698Z",
+    "updatedAt": "2026-02-23T13:49:09.698Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d337daf4f33d3855e9bfc",
+    "name": "EDITOR",
+    "permissions": {
+      "category": [
+        "read",
+        "create",
+        "update",
+        "delete"
+      ]
+    },
+    "isDeleted": false,
+    "createdAt": "2026-02-24T05:13:33.843Z",
+    "updatedAt": "2026-02-24T05:13:33.843Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d33b1af4f33d3855e9c00",
+    "name": "GULSHAN",
+    "permissions": {
+      "category": [
+        "read"
+      ]
+    },
+    "isDeleted": false,
+    "createdAt": "2026-02-24T05:14:25.540Z",
+    "updatedAt": "2026-02-24T05:14:25.540Z",
+    "__v": 0
+  },
+  {
+    "_id": "699d3b9d4a7506556033a96b",
+    "name": "TESTROLE",
+    "permissions": {},
+    "isDeleted": false,
+    "createdAt": "2026-02-24T05:48:13.224Z",
+    "updatedAt": "2026-02-24T05:48:13.224Z",
+    "__v": 0
+  }
+]

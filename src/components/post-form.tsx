@@ -1,21 +1,18 @@
 
 "use client";
 
-import { useState } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, Sparkles, X, ArrowLeft, Loader2 } from "lucide-react";
-import dynamic from "next/dynamic";
+import { useState, useEffect, useCallback } from "react";
+import { Sparkles, X, ArrowLeft, Loader2, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { postService, Category } from "@/services/post-service";
+import { languageService, Language } from "@/services/language-service";
+import { aiWriterService } from "@/services/ai-writer-service";
+import { authService, User } from "@/services/auth-service";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,9 +25,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
-// Dynamic import for ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
-import "react-quill-new/dist/quill.snow.css";
+import dynamic from "next/dynamic";
+
+const CKEditorComponent = dynamic(() => import("@/components/ui/ck-editor"), { 
+    ssr: false,
+    loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-md" />
+});
 
 interface PostData {
     id?: string;
@@ -108,115 +108,270 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
     // Actually, let's look at how we use it. 
     // If we passed PostData from service, we need to map it back to form state.
     
-    const [date, setDate] = useState<Date | undefined>(
+    const [languages, setLanguages] = useState<Language[]>([]);
+    const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
+    const [isLanguageError, setIsLanguageError] = useState(false);
+
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [isCategoryError, setIsCategoryError] = useState(false);
+    
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+    // Fetch initial data
+    useEffect(() => {
+        setCurrentUser(authService.getUser());
+        const fetchData = async () => {
+            setIsLoadingLanguages(true);
+            setIsLanguageError(false);
+            setIsLoadingCategories(true);
+            setIsCategoryError(false);
+
+            try {
+                const [langData, catData] = await Promise.all([
+                    languageService.getLanguages(),
+                    postService.getCategories()
+                ]);
+                console.log("Languages:", langData);
+                setLanguages(langData);
+                console.log("Categories:", catData);
+                setCategories(catData);
+            } catch (error) {
+                console.error("Failed to load initial data", error);
+                // We might want to handle errors individually, but for now this catches if *any* fails. 
+                // To handle individually, we'd wrap api calls or check which failed. 
+                // Simple approach: set both errors if one fails, or refine logic.
+                // Let's refine logic slightly to allow one to succeed if the other fails?
+                // Promise.all rejects if any rejects.
+                // For robust UI, better to use allSettled or catch individually.
+                // Reverting to individual blocks or just setting error generic.
+                setIsLanguageError(true); 
+                setIsCategoryError(true);
+            } finally {
+                setIsLoadingLanguages(false);
+                setIsLoadingCategories(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    /* const [date, setDate] = useState<Date | undefined>(
         initialData?.date ? new Date(initialData.date) : 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (initialData as any)?.releaseDate ? new Date((initialData as any).releaseDate) : undefined
-    );
+        (initialData as any)?.releaseDate ? new Date((initialData as any).releaseDate) : 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (initialData as any)?.createdAt ? new Date((initialData as any).createdAt) : undefined
+    ); */
     const [content, setContent] = useState(initialData?.content || "");
-    const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+    const handleContentChange = useCallback((newContent: string) => {
+        setContent(newContent);
+    }, []);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(
+        // Use initial string URL if editing, otherwise null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        initialData?.image || (initialData as any)?.featuredImage || null
+    );
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
     
     // Form State
-    const [language, setLanguage] = useState(initialData?.language || "");
-    const [category, setCategory] = useState(initialData?.category || "");
-    const [subCategory, setSubCategory] = useState(initialData?.subCategory || "");
+    const [language, setLanguage] = useState(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const langData: any = initialData?.language;
+        return typeof langData === 'object' && langData ? langData._id : (langData || "");
+    });
+    const [category, setCategory] = useState(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const catData: any = initialData?.category;
+        return typeof catData === 'object' && catData ? catData._id : (catData || "");
+    });
+    // const [subCategory, setSubCategory] = useState(initialData?.subCategory || "");
+    const [headLine, setHeadLine] = useState(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = initialData as any;
+        return d?.headline || d?.headLine || d?.title || "";
+    });
+    const [shortHead, setShortHead] = useState(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = initialData as any;
+        return d?.shortDescription || d?.shortHead || d?.shortInfo || "";
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [headLine, setHeadLine] = useState(initialData?.headLine || (initialData as any)?.title || "");
-    const [shortHead, setShortHead] = useState(initialData?.shortHead || "");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [reporter, setReporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
-    
+    const [reporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
+
     // SEO & Settings State
-    const [settings, setSettings] = useState(initialData?.settings || {
-        latest: false,
-        breaking: false,
-        feature: false,
-        recommended: false,
+    const [settings, setSettings] = useState(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        publish: (initialData as any)?.status === "Publish",
-        schema: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        social: (initialData as any)?.socialPost || false
+        const d = initialData as any;
+        return {
+            latest: d?.isLatest || d?.settings?.latest || false,
+            // Trending: d?.settings?.Trending || false,
+            recommended: d?.settings?.recommended || false,
+            publish: d?.status === "published" || d?.status === "Publish" || d?.settings?.publish || false,
+        };
     });
-    const [seo, setSeo] = useState(initialData?.seo || {
-        customUrl: "",
+    
+    const [seo, setSeo] = useState(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        title: (initialData as any)?.seoTitle || "",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        keyword: (initialData as any)?.seoKeywords || "",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        description: (initialData as any)?.seoDescription || "",
-        reference: ""
+        const d = initialData as any;
+        
+        // Handle tags/keywords which could be arrays or comma-string
+        let keywords = d?.seoKeywords || d?.metaKeywords || d?.tags || "";
+        if (Array.isArray(keywords)) {
+            keywords = keywords.join(", ");
+        }
+
+        return {
+            customUrl: d?.slug || d?.seo?.customUrl || "",
+            title: d?.seoTitle || d?.seo?.title || "",
+            keyword: keywords,
+            description: d?.metaDescription || d?.seoDescription || d?.seo?.description || "",
+            reference: d?.seo?.reference || ""
+        };
     });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [imageAlt, setImageAlt] = useState((initialData as any)?.imageAlt || "");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [imageTitle, setImageTitle] = useState((initialData as any)?.imageTitle || "");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [thumbnail, setThumbnail] = useState((initialData as any)?.thumbnail || "");
 
     const [errors, setErrors] = useState<Record<string, boolean>>({});
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const removeImage = useCallback(() => {
+        setImagePreviewUrl(null);
+        setImageFile(null);
+        setImageError(null);
+    }, []);
+
+    const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        setImageError(null);
+        
         if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+            // Optional: add dimension checks similar to opinion-form if needed here
+            const objectUrl = URL.createObjectURL(file);
+            setImagePreviewUrl(objectUrl);
+            setImageFile(file);
         }
-    };
+    }, []);
 
-    const removeImage = () => {
-        setImagePreview(null);
-    }
-
-    const handleSettingChange = (key: keyof typeof settings) => {
+    const handleSettingChange = useCallback((key: keyof typeof settings) => {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    }
+    }, []);
     
     const [isSaving, setIsSaving] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
-    const handleSeoChange = (key: keyof typeof seo, value: string) => {
+    const handleSeoChange = useCallback((key: keyof typeof seo, value: string) => {
          setSeo(prev => ({ ...prev, [key]: value }));
-    }
+    }, []);
+
+    const handleAiGenerate = async () => {
+        if (!headLine) {
+            alert("Please provide a Head Line to generate AI content.");
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const generatedText = await aiWriterService.generateContent(headLine);
+            let htmlContent = generatedText;
+            if (!generatedText.startsWith("<")) {
+                htmlContent = generatedText.split('\n\n').filter(p => p.trim()).map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join('');
+            }
+            if (!content || content.trim() === "") {
+                setContent(htmlContent);
+            } else {
+                setContent(content + htmlContent);
+            }
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to generate AI content";
+            alert(msg);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const handleSubmit = async () => {
         const newErrors: Record<string, boolean> = {};
         if (!language) newErrors.language = true;
         if (!category) newErrors.category = true;
-        if (!date) newErrors.date = true;
         if (!headLine) newErrors.headLine = true;
-        if (!reporter) newErrors.reporter = true;
+        if (!content) newErrors.content = true;
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+            alert("Please fill out all required fields marked with *.");
             return;
+        }
+
+        if (!imagePreviewUrl && !imageFile) {
+             alert("A 'Featured Image' (URL or Upload) is required. Please provide one.");
+             return;
         }
 
         setIsSaving(true);
 
         try {
-            // Map form data to service PostData structure
-            const serviceData = {
-                title: headLine, // Mapping headLine to title
-                language,
-                category,
-                subCategory,
-                content,
-                image: imagePreview || "",
-                seoTitle: seo.title,
-                seoDescription: seo.description,
-                seoKeywords: seo.keyword,
-                postBy: reporter,
-                releaseDate: date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-                postDate: format(new Date(), "yyyy-MM-dd"), // Assuming current date for postDate
-                status: settings.publish ? "Publish" : "Draft" as "Publish" | "Draft", // correct casting or logic
-                socialPost: settings.social,
-                // Add other mapped fields if necessary, or update service to accept more
-            };
-
-            if (isEditing && initialData?.id) {
-                await import("@/services/post-service").then(mod => mod.postService.updatePost(initialData.id!, serviceData));
-                alert("Post updated successfully!");
+            // Generate a slug from the headline if not editing or custom slug provided
+            let generatedSlug = "";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const origData: any = initialData;
+            
+            if (isEditing && (origData?.slug)) {
+                // If editing and we have a slug, keep it unless customUrl is explicitly changed
+                generatedSlug = seo.customUrl || origData.slug;
             } else {
-                 await import("@/services/post-service").then(mod => mod.postService.createPost(serviceData));
-                 alert("Post saved successfully!");
+                const baseSlug = seo.customUrl || headLine
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)+/g, '');
+                
+                // Add random suffix only for new posts to avoid collisions
+                generatedSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+            }
+
+            // Convert tags/keywords to arrays safely
+            const keywordList = seo.keyword.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+
+            const formData = new FormData();
+            formData.append("headline", headLine);
+            formData.append("shortDescription", shortHead);
+            formData.append("content", content);
+            formData.append("category", category);
+            formData.append("language", language);
+            formData.append("slug", generatedSlug);
+            formData.append("status", settings.publish ? "published" : "draft");
+            
+            if (imageFile) {
+                formData.append("image", imageFile);
+            } else if (imagePreviewUrl) {
+                formData.append("image", imagePreviewUrl);
+            }
+
+            if (imageAlt) formData.append("imageAlt", imageAlt);
+            if (imageTitle) formData.append("imageTitle", imageTitle);
+            if (thumbnail) formData.append("thumbnail", thumbnail);
+            
+            if (seo.description) formData.append("metaDescription", seo.description);
+            formData.append("isLatest", String(settings.latest));
+            
+            // Tags and Meta Keywords
+            if (keywordList.length > 0) {
+                keywordList.forEach((k: string) => {
+                    formData.append("tags", k);
+                    formData.append("metaKeywords", k);
+                });
+            }
+
+            if (isEditing && (origData?.id || origData?._id)) {
+                const updateId = origData.id || origData._id;
+                await postService.updateArticle(updateId, formData);
+                alert("Article updated successfully!");
+            } else {
+                 await postService.createArticle(formData);
+                 alert("Article saved successfully!");
             }
              router.push("/post/list");
         } catch (error) {
@@ -229,7 +384,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 space-y-2 sm:space-y-0">
                  <div className="flex items-center gap-4">
                     {isEditing && (
                          <Link href="/post/list">
@@ -238,22 +393,32 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                             </Button>
                         </Link>
                     )}
-                    <h2 className="text-3xl font-bold tracking-tight">{isEditing ? "Edit Post" : "Add Post"}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{isEditing ? "Edit Post" : "Add Post"}</h2>
                 </div>
             </div>
 
             {/* Basic Information Section */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
                 <Label className={cn(errors.language && "text-red-500")}>Language <span className="text-red-500">*</span></Label>
                 <Select onValueChange={setLanguage} value={language}>
                 <SelectTrigger className={cn(errors.language && "border-red-500")}>
                     <SelectValue placeholder="Select Language" />
                 </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
+                 <SelectContent>
+                    {isLoadingLanguages ? (
+                        <SelectItem value="loading" disabled>Loading languages...</SelectItem>
+                    ) : isLanguageError ? (
+                        <SelectItem value="error" disabled>Failed to load languages</SelectItem>
+                    ) : languages.length > 0 ? (
+                        languages.map((lang) => (
+                            <SelectItem key={lang._id} value={lang._id}>
+                                {lang.name}
+                            </SelectItem>
+                        ))
+                    ) : (
+                        <SelectItem value="empty" disabled>No languages available</SelectItem>
+                    )}
                 </SelectContent>
                 </Select>
                 {errors.language && <span className="text-xs text-red-500">Required</span>}
@@ -265,14 +430,24 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                     <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="tech">Technology</SelectItem>
-                    <SelectItem value="life">Lifestyle</SelectItem>
-                    <SelectItem value="news">News</SelectItem>
+                    {isLoadingCategories ? (
+                        <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                    ) : isCategoryError ? (
+                        <SelectItem value="error" disabled>Failed to load categories</SelectItem>
+                    ) : categories.length > 0 ? (
+                        categories.map((cat) => (
+                            <SelectItem key={cat._id} value={cat._id}>
+                                {cat.name}
+                            </SelectItem>
+                        ))
+                    ) : (
+                        <SelectItem value="empty" disabled>No categories available</SelectItem>
+                    )}
                 </SelectContent>
                 </Select>
                 {errors.category && <span className="text-xs text-red-500">Required</span>}
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
                 <Label>Sub Category</Label>
                 <Select value={subCategory} onValueChange={setSubCategory}>
                 <SelectTrigger>
@@ -283,8 +458,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                     <SelectItem value="web">Web Dev</SelectItem>
                 </SelectContent>
                 </Select>
-            </div>
-            <div className="space-y-2">
+            </div> */}
+            {/* <div className="space-y-2">
                 <Label className={cn(errors.date && "text-red-500")}>Release Date <span className="text-red-500">*</span></Label>
                 <Popover>
                 <PopoverTrigger asChild>
@@ -310,7 +485,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 </PopoverContent>
                 </Popover>
                 {errors.date && <span className="text-xs text-red-500">Required</span>}
-            </div>
+            </div> */}
             </div>
             
             <div className="grid gap-4 md:grid-cols-2">
@@ -341,9 +516,9 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             </div>
 
             <div className="space-y-2">
-                <Label>Short Head</Label>
+                <Label>Short Info</Label>
                 <Input 
-                    placeholder="Enter short headline" 
+                    placeholder="Enter short Details" 
                     value={shortHead}
                     onChange={(e) => setShortHead(e.target.value)}
                 />
@@ -363,54 +538,129 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             {/* Details Section */}
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <Label>Details</Label>
-                    <Button variant="outline" size="sm" className="h-8">
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        AI Writer
+                    <Label className={cn(errors.content && "text-red-500")}>
+                        Details <span className="text-red-500">*</span>
+                    </Label>
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAiGenerate}
+                        disabled={isGenerating}
+                        className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5"
+                    >
+                        {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        {isGenerating ? "Generating..." : "Ai Writer"}
                     </Button>
                 </div>
-                <div className="h-64 pb-12"> {/* Added padding for editor toolbar */}
-                    <ReactQuill theme="snow" value={content} onChange={setContent} className="h-full" />
+                {errors.content && <span className="text-xs text-red-500">Required</span>}
+                {/* CKEditor with Source, Image, Table, HTML/CSS support */}
+                <div className="pb-2 mb-16">
+                    <CKEditorComponent value={content} onChange={handleContentChange} />
                 </div>
             </div>
 
             {/* Media Section */}
             <div className="space-y-2 pt-8">
                 <h3 className="text-lg font-medium">Media</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label>Image Upload</Label>
-                        <div className="flex items-center gap-4">
-                            <Input type="file" onChange={handleImageChange} accept="image/*" className="cursor-pointer" />
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* Image Upload/URL Source */}
+                    <div className="space-y-4 p-4 border rounded-md bg-gray-50/50">
+                        <Label className="text-base font-semibold text-gray-800">Featured Image (URL or Upload)</Label>
+                        
+                        {/* URL Option */}
+                        <div className="space-y-2">
+                            <Label className="text-sm">Image URL</Label>
+                            <Input 
+                                placeholder="https://example.com/image.jpg"
+                                value={!imageFile ? (imagePreviewUrl || "") : ""}
+                                onChange={(e) => {
+                                    setImageFile(null); // Clear file if URL is typed
+                                    setImagePreviewUrl(e.target.value);
+                                }}
+                            />
                         </div>
-                        {imagePreview && (
-                            <div className="relative mt-2 w-40 h-24 rounded-md overflow-hidden border">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                <Button
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-1 right-1 h-6 w-6"
-                                    onClick={removeImage}
+
+                        <div className="relative flex items-center py-2">
+                            <div className="flex-grow border-t border-gray-300"></div>
+                            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">OR</span>
+                            <div className="flex-grow border-t border-gray-300"></div>
+                        </div>
+
+                        {/* File Option */}
+                        <div className="space-y-2">
+                            <Label className="text-sm">Upload Image</Label>
+                            <Input 
+                                type="file" 
+                                id="featured-image-upload"
+                                className="hidden"
+                                onChange={handlePhotoChange} 
+                                accept="image/jpeg, image/jpg, image/png, image/webp" 
+                            />
+                            <div className="flex items-center gap-4">
+                                <Label 
+                                    htmlFor="featured-image-upload" 
+                                    className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium transition-colors w-full justify-center text-gray-600"
                                 >
-                                    <X className="h-3 w-3" />
-                                </Button>
+                                    <UploadCloud className="h-4 w-4" />
+                                    Choose File
+                                </Label>
+                            </div>
+                            {imageError && <p className="text-xs text-red-500 font-medium mt-1">{imageError}</p>}
+                        </div>
+
+                        {/* Unified Preview */}
+                        {imagePreviewUrl && (
+                            <div className="mt-4">
+                                <Label className="text-xs text-muted-foreground mb-1 block">Preview:</Label>
+                                <div className="relative w-full h-40 sm:h-48 rounded-md overflow-hidden border bg-white flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={imagePreviewUrl} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-sm"
+                                        onClick={removeImage}
+                                        type="button"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
-                    <div className="space-y-2">
-                        <Label>Video URL</Label>
-                        <Input placeholder="https://youtube.com/..." />
+                    
+                    {/* Other Media Options */}
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Thumbnail URL (Optional)</Label>
+                            <Input 
+                                placeholder="https://example.com/thumb.jpg" 
+                                value={thumbnail}
+                                onChange={(e) => setThumbnail(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Video URL</Label>
+                            <Input placeholder="https://youtube.com/..." />
+                        </div>
                     </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                         <Label>Image Alt</Label>
-                        <Input placeholder="Alt text" />
+                        <Input 
+                            placeholder="Alt text" 
+                            value={imageAlt}
+                            onChange={(e) => setImageAlt(e.target.value)}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label>Image Title</Label>
-                        <Input placeholder="Image title" />
+                        <Input 
+                            placeholder="Image title" 
+                            value={imageTitle}
+                            onChange={(e) => setImageTitle(e.target.value)}
+                        />
                     </div>
                 </div>
             </div>
@@ -464,18 +714,12 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
 
             {/* Reporter Section */}
             <div className="space-y-2">
-                <Label className={cn(errors.reporter && "text-red-500")}>Reporter <span className="text-red-500">*</span></Label>
-                <Select onValueChange={setReporter} value={reporter}>
-                <SelectTrigger className={cn(errors.reporter && "border-red-500")}>
-                    <SelectValue placeholder="Select Reporter" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="john">John Doe</SelectItem>
-                    <SelectItem value="jane">Jane Smith</SelectItem>
-                    <SelectItem value="add_new">+ Add New</SelectItem>
-                </SelectContent>
-                </Select>
-                {errors.reporter && <span className="text-xs text-red-500">Required</span>}
+                <Label>Content Writer</Label>
+                <Input 
+                    value={reporter || currentUser?.name || currentUser?.fullName || currentUser?.email || "Current User"} // Fallback or rely on parent component mapping the logged-in user to initialData
+                    readOnly
+                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
             </div>
 
             {/* Post Settings */}
@@ -489,21 +733,24 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                                 checked={settings[key as keyof typeof settings]} 
                                 onCheckedChange={() => handleSettingChange(key as keyof typeof settings)}
                             />
-                            <Label htmlFor={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()} {key === 'social' ? 'Post' : ''}</Label>
+                            <Label htmlFor={key} className="capitalize">
+                                {key === 'recommended' 
+                                    ? 'Save as Draft' 
+                                    : `${key.replace(/([A-Z])/g, ' $1').trim()}${key === 'social' ? ' Post' : ''}`}
+                            </Label>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-4 pt-4">
-                <Button size="lg" onClick={handleSubmit} disabled={isSaving}>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-4 pt-4 pb-10">
+                <Link href="/post/list" className="w-full sm:w-auto">
+                    <Button variant="outline" size="lg" className="w-full">Cancel</Button>
+                </Link>
+                <Button size="lg" onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isSaving ? "Saving..." : (isEditing ? "Update Post" : "Save Post")}
                 </Button>
-                <Link href="/post/list">
-                    <Button variant="outline" size="lg">Cancel</Button>
-                </Link>
             </div>
         </div>
     );

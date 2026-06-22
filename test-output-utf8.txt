@@ -1,0 +1,9 @@
+Testing https://project-epoverse-backend.onrender.com/api/auth/login...
+Error: Request failed with status code 400
+Response Status: 400
+Response Data: {"message":"User not found","error":"Bad Request","statusCode":400}
+
+Testing https://filmydock-backend.onrender.com/api/auth/login...
+Error: Request failed with status code 401
+Response Status: 401
+Response Data: {"message":"No Token Provided"}

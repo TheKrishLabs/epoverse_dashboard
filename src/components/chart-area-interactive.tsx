@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { DashboardResponse } from "@/services/dashboard-service"
 
 export const description = "An interactive area chart"
 
@@ -136,12 +137,20 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive() {
+export function ChartAreaInteractive({ dashboardData }: { dashboardData?: DashboardResponse }) {
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const filteredData = chartData.filter((item) => {
+  // If the backend has visitorStats Array on it
+  const visitorStats = dashboardData?.data?.visitorStats;
+
+  // Utilize the API payload array if valid, otherwise fallback to the hardcoded mocked data
+  const chartSourceData = Array.isArray(visitorStats) && visitorStats.length > 0 
+        ? visitorStats 
+        : chartData;
+
+  const filteredData = chartSourceData.filter((item) => {
     const date = new Date(item.date)
-    const referenceDate = new Date("2024-06-30")
+    const referenceDate = new Date(); // Dynamic end date for live endpoints
     let daysToSubtract = 90
     if (timeRange === "30d") {
       daysToSubtract = 30

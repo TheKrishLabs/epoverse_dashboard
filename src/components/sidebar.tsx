@@ -44,7 +44,7 @@ export function SidebarContent({ className, onLinkClick }: SidebarProps) {
                                 
                                 if (item.items && item.items.length > 0) {
                                     return (
-                                        <DropdownMenu key={item.href}>
+                                        <DropdownMenu key={item.title}>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
                                                     variant={isActive ? "secondary" : "ghost"}
@@ -61,7 +61,7 @@ export function SidebarContent({ className, onLinkClick }: SidebarProps) {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="start" side="right" className="w-48 ml-2">
                                                 {item.items.map((subItem) => (
-                                                    <DropdownMenuItem key={subItem.href} asChild>
+                                                    <DropdownMenuItem key={subItem.title} asChild>
                                                         <Link href={subItem.href} className="cursor-pointer">
                                                             <subItem.icon className="mr-2 h-4 w-4" />
                                                             {subItem.title}
@@ -75,7 +75,7 @@ export function SidebarContent({ className, onLinkClick }: SidebarProps) {
 
                                 return (
                                     <Button
-                                        key={item.href}
+                                        key={item.title}
                                         variant={isActive ? "secondary" : "ghost"}
                                         className={cn(
                                             "w-full justify-start h-9 px-4 font-normal transition-all duration-200",

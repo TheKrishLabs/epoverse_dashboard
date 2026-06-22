@@ -7,6 +7,7 @@ import { Upload, FileText, Share2, FileDown, AlertCircle, CheckCircle2, Loader2,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { postService } from "@/services/post-service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -23,6 +24,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function BulkUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -60,22 +62,49 @@ export default function BulkUploadPage() {
 
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
-    // Simulate API call
-    setTimeout(() => {
-        setIsLoading(false);
-         // Simulate random success/failure for demonstration
-        const isSuccess = Math.random() > 0.3;
+    try {
+        const response = await postService.uploadBulkArticles(file);
         
-        if (isSuccess) {
-            setSuccess(`Successfully uploaded ${file.name}. 25 posts processed.`);
-            setFile(null);
-             const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
-             if (fileInput) fileInput.value = '';
-        } else {
-            setError("Failed to process CSV file. Please check expected format.");
-        }
-    }, 2000);
+        // Parse meaningful message natively out of the API if provided, or default it
+        const successMsg = response.message || response.data?.message || `Successfully processed ${file.name}.`;
+        
+        setSuccess(successMsg);
+        setFile(null);
+        
+        const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+        // Attempt to parse validation errors directly pushed by the backend
+        const errMsg = err.response?.data?.message || err.response?.data?.error || "Failed to process CSV file. Please check expected format.";
+        setError(errMsg);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+      setIsDownloadingTemplate(true);
+      setError(null);
+      setSuccess(null);
+      try {
+          const blob = await postService.downloadBulkTemplate();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'bulk_upload_template.csv');
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode?.removeChild(link);
+          window.URL.revokeObjectURL(url);
+      } catch (err) {
+          console.error("Template download failed:", err);
+          setError("Failed to download the template. Please try again.");
+      } finally {
+          setIsDownloadingTemplate(false);
+      }
   };
 
   return (
@@ -407,8 +436,17 @@ export default function BulkUploadPage() {
             </Dialog>
 
              <div className="grid grid-cols-2 gap-4 pt-2">
-                 <Button variant="outline" className="h-24 flex-col gap-2 border-green-200 bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/40">
-                     <FileDown className="h-6 w-6" />
+                 <Button 
+                    variant="outline" 
+                    className="h-24 flex-col gap-2 border-green-200 bg-green-50 hover:bg-green-100 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/40"
+                    onClick={handleDownloadTemplate}
+                    disabled={isDownloadingTemplate}
+                 >
+                     {isDownloadingTemplate ? (
+                         <Loader2 className="h-6 w-6 animate-spin" />
+                     ) : (
+                         <FileDown className="h-6 w-6" />
+                     )}
                      Template CSV
                  </Button>
                  <Button variant="outline" className="h-24 flex-col gap-2 border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/40">

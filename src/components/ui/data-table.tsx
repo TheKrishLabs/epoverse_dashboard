@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ChevronLeft, ChevronRight, FileSpreadsheet, FileText } from "lucide-react"
+
 
 import {
   Table,
@@ -100,14 +100,7 @@ export function DataTable<TData, TValue>({
               </div>
           </div>
 
-          <div className="flex items-center gap-2">
-               <Button variant="outline" className="h-8 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900 dark:hover:bg-green-900/40">
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> CSV
-               </Button>
-               <Button variant="outline" className="h-8 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900 dark:hover:bg-green-900/40">
-                   <FileText className="mr-2 h-4 w-4" /> Excel
-               </Button>
-          </div>
+
 
            <div className="flex items-center space-x-2">
                 <span className="text-sm">Search:</span>
@@ -120,14 +113,14 @@ export function DataTable<TData, TValue>({
             </div>
       </div>
       
-      <div className="rounded-md border bg-white dark:bg-sidebar dark:border-border">
-        <Table>
-          <TableHeader className="bg-emerald-50 dark:bg-emerald-950/20">
+      <div className="border border-gray-200 bg-white dark:bg-sidebar dark:border-border overflow-hidden rounded-none shadow-sm">
+        <Table className="divide-y divide-gray-200">
+          <TableHeader className="bg-[#fcfcfc] border-b border-gray-200">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="divide-x divide-gray-200">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="text-gray-800 font-bold px-4 py-3 align-middle">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -140,15 +133,16 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="divide-y divide-gray-200">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="divide-x divide-gray-200 hover:bg-gray-50/50 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-4 py-3 align-middle">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -161,7 +155,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-gray-500"
                 >
                   No results.
                 </TableCell>
@@ -172,17 +166,16 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-gray-600">
              Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of {table.getFilteredRowModel().rows.length} entries
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <Button
             variant="outline"
-            size="sm"
+            className="h-9 px-3 text-sm font-medium border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
            <div className="flex items-center space-x-1">
@@ -190,8 +183,7 @@ export function DataTable<TData, TValue>({
                   <Button
                     key={i}
                      variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
-                     size="sm"
-                     className={table.getState().pagination.pageIndex === i ? "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800" : ""}
+                     className={`h-9 w-9 p-0 text-sm font-medium rounded-[3px] shadow-none ${table.getState().pagination.pageIndex === i ? "bg-[#198754] hover:bg-[#157347] text-white border-[#198754]" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"}`}
                      onClick={() => table.setPageIndex(i)}
                    >
                          {i + 1}
@@ -200,12 +192,11 @@ export function DataTable<TData, TValue>({
            </div>
           <Button
             variant="outline"
-            size="sm"
+             className="h-9 px-3 text-sm font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
             Next
-             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       </div>

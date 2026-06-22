@@ -9,7 +9,6 @@ import {
   Archive,
   Megaphone,
   Radio,
-  User,
   MessageSquare,
   BarChart,
   Video,
@@ -75,7 +74,7 @@ export const sidebarNav: SidebarNavGroup[] = [
             variant: "ghost",
           },
           {
-            title: "Breaking Post",
+            title: "Trending Post",
             href: "/post/breaking",
             icon: FileText,
             variant: "ghost",
@@ -96,21 +95,63 @@ export const sidebarNav: SidebarNavGroup[] = [
       },
       {
         title: "Video Post",
-        href: "/video-post",
+        href: "#",
         icon: Video,
         variant: "ghost",
+        items: [
+          {
+            title: "Add Video Post",
+            href: "/video-post/add",
+            icon: Video,
+            variant: "ghost",
+          },
+          {
+            title: "Video Post List",
+            href: "/video-post/list",
+            icon: Video,
+            variant: "ghost",
+          }
+        ]
       },
       {
         title: "Page",
-        href: "/page-builder",
+        href: "#",
         icon: Layout,
         variant: "ghost",
+        items: [
+          {
+            title: "Add New Page",
+            href: "/page-builder/add",
+            icon: Layout,
+            variant: "ghost",
+          },
+          {
+            title: "Page List",
+            href: "/page-builder/list",
+            icon: Layout,
+            variant: "ghost",
+          }
+        ]
       },
       {
         title: "Media Library",
-        href: "/media-library",
+        href: "#", // Use # or a parent route if using submenu
         icon: ImageIcon,
         variant: "ghost",
+        items: [
+          {
+            title: "Photo Upload",
+            href: "/media-library/upload",
+            icon: ImageIcon,
+            variant: "ghost",
+          },
+          {
+            title: "Photo List",
+            href: "/media-library/list",
+            icon: ImageIcon,
+            variant: "ghost",
+          }
+        ]
       },
       {
         title: "Categories",
@@ -137,16 +178,16 @@ export const sidebarNav: SidebarNavGroup[] = [
       },
       {
         title: "Menu",
-        href: "/menu",
+        href: "/menus",
         icon: Gift,
         variant: "ghost",
       },
-      {
-        title: "Reporter",
-        href: "/reporter",
-        icon: User,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Reporter",
+      //   href: "/reporter",
+      //   icon: User,
+      //   variant: "ghost",
+      // },
     ],
   },
   {
@@ -160,9 +201,23 @@ export const sidebarNav: SidebarNavGroup[] = [
       },
       {
         title: "Polls",
-        href: "/polls",
+        href: "#",
         icon: BarChart,
         variant: "ghost",
+        items: [
+          {
+            title: "Add Poll",
+            href: "/polls/add",
+            icon: BarChart,
+            variant: "ghost",
+          },
+          {
+            title: "Polls List",
+            href: "/polls",
+            icon: BarChart,
+            variant: "ghost",
+          },
+        ]
       },
       {
         title: "Subscribers",
@@ -221,6 +276,44 @@ export const sidebarNav: SidebarNavGroup[] = [
         href: "/settings",
         icon: Settings,
         variant: "ghost",
+      },
+      {
+        title: "Cookie Content",
+        href: "/settings/cookie-content",
+        icon: FileText,
+        variant: "ghost",
+      },
+      {
+        title: "User Management",
+        href: "#",
+        icon: Users,
+        variant: "ghost",
+        items: [
+          {
+            title: "Employee List",
+            href: "/settings/users",
+            icon: Users,
+            variant: "ghost",
+          },
+          {
+            title: "Role List",
+            href: "/settings/roles",
+            icon: FileText,
+            variant: "ghost",
+          },
+          {
+            title: "Language List",
+            href: "/settings/languages",
+            icon: FileText,
+            variant: "ghost",
+          },
+          {
+            title: "Access Log",
+            href: "/settings/access-log",
+            icon: FileText,
+            variant: "ghost",
+          },
+        ]
       },
       {
         title: "Update guides",

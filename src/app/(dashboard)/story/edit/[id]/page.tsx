@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { 
   ArrowLeft,
@@ -24,12 +24,11 @@ import { storyService } from "@/services/story-service";
 import { useRouter } from "next/navigation";
 
 interface StoryEditPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function StoryEditPage({ params }: StoryEditPageProps) {
+  const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   
@@ -38,7 +37,6 @@ export default function StoryEditPage({ params }: StoryEditPageProps) {
   const [buttonText, setButtonText] = useState("");
   const [buttonLink, setButtonLink] = useState("");
   
-  // Image handling
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -49,7 +47,7 @@ export default function StoryEditPage({ params }: StoryEditPageProps) {
   useEffect(() => {
     const loadStory = async () => {
         try {
-            const story = await storyService.getStoryById(params.id);
+            const story = await storyService.getStoryById(id);
             if (story) {
                 setLanguage(story.language);
                 setTitle(story.title);
@@ -67,7 +65,7 @@ export default function StoryEditPage({ params }: StoryEditPageProps) {
         }
     };
     loadStory();
-  }, [params.id]);
+  }, [id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -103,7 +101,7 @@ export default function StoryEditPage({ params }: StoryEditPageProps) {
 
     setIsSaving(true);
     try {
-        await storyService.updateStory(params.id, {
+        await storyService.updateStory(id, {
             language,
             title,
             buttonText,

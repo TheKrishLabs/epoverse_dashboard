@@ -151,10 +151,10 @@ export function AuthPage() {
             }}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            {/* <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+              {/* <TabsTrigger value="signup">Sign Up</TabsTrigger> */}
+            {/* </TabsList> */}
 
             <div className="min-h-[350px]">
               {/* Login Tab */}
@@ -242,7 +242,7 @@ export function AuthPage() {
               </TabsContent>
 
               {/* Signup Tab */}
-              <TabsContent value="signup" className="space-y-4">
+              {/* <TabsContent value="signup" className="space-y-4">
                  {error && activeTab === "signup" && (
                     <Alert variant="destructive">
                     <AlertTitle>Error</AlertTitle>
@@ -359,7 +359,7 @@ export function AuthPage() {
                     </Button>
                   </form>
                 </Form>
-              </TabsContent>
+              </TabsContent> */}
             </div>
           </Tabs>
         </CardContent>
