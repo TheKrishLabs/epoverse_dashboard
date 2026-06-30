@@ -6,19 +6,12 @@ import {
   Gift,
   BrainCircuit,
   Tags,
-  Archive,
   Megaphone,
-  Radio,
   MessageSquare,
   BarChart,
   Video,
   Layout,
-  Search,
-  Share2,
-  Globe,
-  Settings,
   Users,
-  BookOpen,
 } from "lucide-react";
 
 export type SidebarNavItem = {
@@ -159,12 +152,12 @@ export const sidebarNav: SidebarNavGroup[] = [
         icon: Tags,
         variant: "ghost",
       },
-      {
-        title: "Archive",
-        href: "/archive",
-        icon: Archive,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Archive",
+      //   href: "/archive",
+      //   icon: Archive,
+      //   variant: "ghost",
+      // },
     ],
   },
   {
@@ -220,7 +213,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         ]
       },
       {
-        title: "Subscribers",
+        title: "User List",
         href: "/subscribers",
         icon: Users,
         variant: "ghost",
@@ -230,53 +223,53 @@ export const sidebarNav: SidebarNavGroup[] = [
   {
     title: "Marketing",
     items: [
-      {
-        title: "SEO",
-        href: "/seo",
-        icon: Search,
-        variant: "ghost",
-      },
+      // {
+      //   title: "SEO",
+      //   href: "/seo",
+      //   icon: Search,
+      //   variant: "ghost",
+      // },
       {
         title: "Advertisement",
         href: "/advertisement",
         icon: Megaphone,
         variant: "ghost",
       },
-      {
-        title: "Rss Feeds",
-        href: "/rss-feeds",
-        icon: Radio,
-        variant: "ghost",
-      },
-      {
-        title: "Auto Post",
-        href: "/auto-post-settings",
-        icon: Share2,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Rss Feeds",
+      //   href: "/rss-feeds",
+      //   icon: Radio,
+      //   variant: "ghost",
+      // },
+      // {
+      //   title: "Auto Post",
+      //   href: "/auto-post-settings",
+      //   icon: Share2,
+      //   variant: "ghost",
+      // },
     ],
   },
   {
     title: "Settings",
     items: [
-      {
-        title: "Theme",
-        href: "/theme",
-        icon: Server,
-        variant: "ghost",
-      },
-      {
-        title: "Web Setup",
-        href: "/web-setup",
-        icon: Globe,
-        variant: "ghost",
-      },
-      {
-        title: "Settings",
-        href: "/settings",
-        icon: Settings,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Theme",
+      //   href: "/theme",
+      //   icon: Server,
+      //   variant: "ghost",
+      // },
+      // {
+      //   title: "Web Setup",
+      //   href: "/web-setup",
+      //   icon: Globe,
+      //   variant: "ghost",
+      // },
+      // {
+      //   title: "Settings",
+      //   href: "/settings",
+      //   icon: Settings,
+      //   variant: "ghost",
+      // },
       {
         title: "Cookie Content",
         href: "/settings/cookie-content",
@@ -315,12 +308,12 @@ export const sidebarNav: SidebarNavGroup[] = [
           },
         ]
       },
-      {
-        title: "Update guides",
-        href: "/update-guides",
-        icon: BookOpen,
-        variant: "ghost",
-      },
+      // {
+      //   title: "Update guides",
+      //   href: "/update-guides",
+      //   icon: BookOpen,
+      //   variant: "ghost",
+      // },
     ],
   },
 ];

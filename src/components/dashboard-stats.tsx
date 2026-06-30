@@ -5,10 +5,10 @@ import {
     MessageCircle, 
     Users, 
     CheckCircle2, 
-    Clock, 
-    Star, 
     Files,
-    Layers
+    Layers,
+    Clock,
+    FileCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashboardResponse } from "@/services/dashboard-service";
@@ -19,59 +19,61 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ dashboardData }: DashboardStatsProps) {
     // Graceful fallbacks using 0 if the backend omits any fields
+    const summary = dashboardData.dashboard?.summary;
+    
     const stats = [
         {
             title: "Total Posts",
-            value: dashboardData.totalArticle?.allLength || 0,
+            value: summary?.totalArticles || 0,
             icon: ListTodo,
             color: "text-blue-600",
             bgColor: "bg-blue-100 dark:bg-blue-900/30",
         },
         {
-            title: "Approved Posts",
-            value: dashboardData.totalArticle?.approvedCount || 0,
-            icon: CheckCircle2,
-            color: "text-green-600",
-            bgColor: "bg-green-100 dark:bg-green-900/30",
-        },
-        {
-            title: "Pending Posts",
-            value: dashboardData.totalArticle?.pendingCount || 0,
-            icon: Clock,
-            color: "text-yellow-600 dark:text-yellow-500",
-            bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
-        },
-        {
-            title: "Featured Posts",
-            value: dashboardData.totalArticle?.featuredCount || 0,
-            icon: Star,
-            color: "text-orange-500",
-            bgColor: "bg-orange-100 dark:bg-orange-900/30",
-        },
-        {
-            title: "Total Comments",
-            value: dashboardData.totalComments || 0,
-            icon: MessageCircle,
-            color: "text-slate-600 dark:text-slate-300",
-            bgColor: "bg-slate-100 dark:bg-slate-800/50",
-        },
-        {
-            title: "Total Categories",
-            value: dashboardData.totalCategories || 0,
-            icon: Layers,
-            color: "text-indigo-600",
-            bgColor: "bg-indigo-100 dark:bg-indigo-900/30",
-        },
-        {
             title: "Total Users",
-            value: dashboardData.totalUser || 0,
+            value: summary?.totalUsers || 0,
             icon: Users,
             color: "text-pink-600",
             bgColor: "bg-pink-100 dark:bg-pink-900/30",
         },
         {
+            title: "Total Employees",
+            value: summary?.totalEmployees || 0,
+            icon: CheckCircle2, 
+            color: "text-green-600",
+            bgColor: "bg-green-100 dark:bg-green-900/30",
+        },
+        {
+            title: "Total Comments",
+            value: summary?.totalComments || 0,
+            icon: MessageCircle,
+            color: "text-slate-600 dark:text-slate-300",
+            bgColor: "bg-slate-100 dark:bg-slate-800/50",
+        },
+        {
+            title: "Pending Articles",
+            value: summary?.totalPendingArticles || 0,
+            icon: Clock,
+            color: "text-amber-600",
+            bgColor: "bg-amber-100 dark:bg-amber-900/30",
+        },
+        {
+            title: "Approved Articles",
+            value: summary?.totalApprovedArticles || 0,
+            icon: FileCheck,
+            color: "text-cyan-600",
+            bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
+        },
+        {
+            title: "Total Categories",
+            value: summary?.totalCategory || 0,
+            icon: Layers,
+            color: "text-indigo-600",
+            bgColor: "bg-indigo-100 dark:bg-indigo-900/30",
+        },
+        {
             title: "Total Languages",
-            value: dashboardData.totalLanguage || 0,
+            value: summary?.totalLanguage || 0,
             icon: Files,
             color: "text-emerald-600",
             bgColor: "bg-emerald-100 dark:bg-emerald-900/30",

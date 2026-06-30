@@ -141,7 +141,7 @@ export function ChartAreaInteractive({ dashboardData }: { dashboardData?: Dashbo
   const [timeRange, setTimeRange] = React.useState("90d")
 
   // If the backend has visitorStats Array on it
-  const visitorStats = dashboardData?.data?.visitorStats;
+  const visitorStats = dashboardData?.dashboard?.data?.visitorStats;
 
   // Utilize the API payload array if valid, otherwise fallback to the hardcoded mocked data
   const chartSourceData = Array.isArray(visitorStats) && visitorStats.length > 0 

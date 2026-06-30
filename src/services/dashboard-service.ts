@@ -14,35 +14,46 @@ export interface VisitorStat {
   visitors?: number; 
 }
 
-export interface DashboardResponse {
-  totalArticle: DashboardArticleCounts;
-  totalCategories: number;
+export interface DashboardSummary {
+  totalUsers: number;
+  totalEmployees: number;
+  totalArticles: number;
   totalComments: number;
-  totalMenu: number;
-  totalRole: number;
+  totalPendingArticles: number;
+  totalApprovedArticles: number;
   totalLanguage: number;
-  totalUser: number;
-  message?: string;
-  data?: { // Some APIs wrap details heavily in .data
-       visitorStats?: VisitorStat[];
-       // add other properties if the payload dictates it
-       [key: string]: unknown;
+  totalCategory: number;
+}
+
+export interface DashboardResponse {
+  success: boolean;
+  message: string;
+  dashboard: {
+    summary: DashboardSummary;
+    totalMenu?: number;
+    totalRole?: number;
+    data?: {
+      visitorStats?: VisitorStat[];
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
   };
+  summary?: DashboardSummary;
 }
 
 export const dashboardService = {
   getAdminDashboard: async (): Promise<DashboardResponse | undefined> => {
     try {
-        const payload = await api.get<DashboardResponse>('/dashboard/admin');
+        // Using a type that allows checking for a 'data' wrapper property 
+        // while avoiding the 'any' lint error.
+        const payload = await api.get<DashboardResponse & { data?: DashboardResponse }>('/dashboard/admin');
         
-        // Safely extract from nested `.data.data` wrapper if it exists (common inside node setups)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const resObj = payload as any;
-        if (resObj?.data && resObj?.data?.totalArticle) {
-            return resObj.data as DashboardResponse;
+        // Defensive check: If the response is wrapped in { data: ... }
+        if (payload?.data && (payload?.data?.dashboard || payload?.data?.summary)) {
+            return payload.data as DashboardResponse;
         }
 
-        return payload;
+        return payload as DashboardResponse;
     } catch (error) {
         console.error("Failed to fetch admin dashboard payload:", error);
         throw error;

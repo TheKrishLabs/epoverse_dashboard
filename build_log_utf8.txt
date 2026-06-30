@@ -1,0 +1,28 @@
+﻿
+> epoverse@0.1.0 build
+> next build --turbopack
+
+   Ôû▓ Next.js 15.5.12 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Finished writing to disk in 1726ms
+node.exe : 
+At C:\Program 
+Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe 
+   cified: (:String) [], RemoteExce  
+  ption
+    + FullyQualifiedErrorId : Native 
+   CommandError
+ 
+> Build error occurred
+[Error: ENOENT: no such file or 
+directory, open 'C:\Users\orang\OneDr
+ive\Desktop\krishLab nn\project_epove
+rse_dashboard\.next\static\JMflxtUVyd
+dBirit1nFiD\_buildManifest.js.tmp.5tf
+wzg80koq']
+
