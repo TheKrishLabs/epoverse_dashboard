@@ -22,12 +22,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { CheckCircle2 } from "lucide-react";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // --- Deletion Dialog state ---
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // --- Filter state ---
   const [filters, setFilters] = useState({
@@ -59,16 +75,34 @@ export default function CategoriesPage() {
     setSearchQuery("");
   };
 
-  const handleDelete = useCallback(async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete the category "${name}"?`)) return;
+  const handleDeleteClick = useCallback((id: string, name: string) => {
+    setCategoryToDelete({ id, name });
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+    
+    setIsDeleteDialogOpen(false);
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
     try {
-      await postService.deleteCategory(id);
-      loadCategories();
+      await postService.deleteCategory(categoryToDelete.id);
+      setSuccess(`Category "${categoryToDelete.name}" deleted successfully.`);
+      await loadCategories();
+      
+      // Auto-clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       console.error("Failed to delete category", err);
       setError("Failed to delete category. Please try again.");
+    } finally {
+      setLoading(false);
+      setCategoryToDelete(null);
     }
-  }, [loadCategories]);
+  };
 
   const handleReorder = async (newOrder: Category[]) => {
     // Optimistically update the UI
@@ -189,6 +223,14 @@ export default function CategoriesPage() {
         </Alert>
       )}
 
+      {success && (
+        <Alert className="mb-4 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/40">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center h-64 border rounded-md">
            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -227,6 +269,29 @@ export default function CategoriesPage() {
           />
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the category
+              <span className="font-semibold text-foreground mx-1">&quot;{categoryToDelete?.name}&quot;</span>
+              and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800"
+            >
+              Delete Category
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

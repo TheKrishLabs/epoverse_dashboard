@@ -55,7 +55,12 @@ export const getColumns = (onDelete: (id: string, name: string) => void): Column
     header: "Action",
     cell: ({ row }) => {
       const category = row.original;
-      const id = category._id;
+      // Robustly extract the identifier (supports both _id and id)
+      const id = category._id || (category as { id?: string }).id;
+
+      if (!id) {
+          console.warn("Category ID not found for", category.name);
+      }
 
       return (
         <div className="flex items-center gap-2">
@@ -74,7 +79,7 @@ export const getColumns = (onDelete: (id: string, name: string) => void): Column
             size="icon" 
             className="h-8 w-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40" 
             title="Delete"
-            onClick={() => onDelete(id, category.name)}
+            onClick={() => id && onDelete(id, category.name)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

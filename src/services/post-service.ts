@@ -44,10 +44,14 @@ export const postService = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response: any = await api.get('/categories');
         console.log("Raw Categories Response:", response);
-        if (Array.isArray(response)) return response;
-        if (response && Array.isArray(response.data)) return response.data;
-        if (response && Array.isArray(response.categories)) return response.categories;
-        return [];
+        let items: Category[] = [];
+        if (Array.isArray(response)) items = response;
+        else if (response && Array.isArray(response.data)) items = response.data;
+        else if (response && Array.isArray(response.categories)) items = response.categories;
+        
+        // Backend might use soft-delete (isDeleted: true) similar to articles
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return items.filter((c: any) => !c.isDeleted);
       } catch (error) {
         console.error("Failed to fetch categories", error);
         throw error;

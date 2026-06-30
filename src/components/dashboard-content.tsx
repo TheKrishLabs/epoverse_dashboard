@@ -19,6 +19,7 @@ export function DashboardContent() {
       try {
         setIsLoading(true);
         const res = await dashboardService.getAdminDashboard();
+        console.log("DEBUG: Dashboard Payload:", res);
         if (res) {
             setData(res);
         }
