@@ -121,7 +121,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const columns = useMemo(() => getColumns(handleDelete), [handleDelete]);
+  const columns = useMemo(() => getColumns(handleDeleteClick), [handleDeleteClick]);
 
   const activeFiltersCount = [
     filters.status !== "all",
