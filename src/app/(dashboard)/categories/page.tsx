@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Filter, Loader2, Plus, RefreshCw, Search, X } from "lucide-react";
 import Link from "next/link";
 import { getColumns } from "./columns";
-import { DataTable } from "@/components/ui/data-table";
+import { DraggableDataTable } from "./draggable-data-table";
 import { Button } from "@/components/ui/button";
 import { postService, Category } from "@/services/post-service";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -104,7 +104,24 @@ export default function CategoriesPage() {
     }
   };
 
-  const columns = useMemo(() => getColumns(handleDeleteClick), [handleDeleteClick]);
+  const handleReorder = async (newOrder: Category[]) => {
+    // Optimistically update the UI
+    setCategories(newOrder);
+
+    // Get array of IDs in new order
+    const orderedIds = newOrder.map(cat => cat._id);
+    
+    try {
+      await postService.updateCategoryOrder(orderedIds);
+    } catch (err) {
+      console.error("Failed to reorder categories", err);
+      setError("Failed to reorder categories. Please try again.");
+      // Rollback to previous state on failure
+      loadCategories();
+    }
+  };
+
+  const columns = useMemo(() => getColumns(handleDelete), [handleDelete]);
 
   const activeFiltersCount = [
     filters.status !== "all",
@@ -244,7 +261,12 @@ export default function CategoriesPage() {
                 </Button>
              </div>
           )}
-          <DataTable columns={columns} data={filteredCategories} />
+          <DraggableDataTable 
+            columns={columns} 
+            data={filteredCategories} 
+            onReorder={handleReorder}
+            getRowId={(row) => row._id}
+          />
         </div>
       )}
 
