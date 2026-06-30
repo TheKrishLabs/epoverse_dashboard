@@ -36,12 +36,14 @@ import {
 } from "@/components/ui/table"
 
 interface DraggableDataTableProps<TData> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[]
   data: TData[]
   onReorder: (newData: TData[]) => void
   getRowId: (row: TData) => string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function SortableRow({ row, getRowId }: { row: any; getRowId: (row: any) => string }) {
   const {
     attributes,
@@ -55,6 +57,7 @@ function SortableRow({ row, getRowId }: { row: any; getRowId: (row: any) => stri
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...(isDragging ? { position: "relative", zIndex: 9999, backgroundColor: "var(--background)" } as any : {}),
   }
 
@@ -71,6 +74,7 @@ function SortableRow({ row, getRowId }: { row: any; getRowId: (row: any) => stri
           <GripVertical className="h-4 w-4" />
         </div>
       </TableCell>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {row.getVisibleCells().map((cell: any) => (
         <TableCell key={cell.id} className="px-4 py-3 align-middle">
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
