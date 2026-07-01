@@ -1,10 +1,10 @@
 "use client";
 
-import { 
-    ListTodo, 
-    MessageCircle, 
-    Users, 
-    CheckCircle2, 
+import {
+    ListTodo,
+    MessageCircle,
+    Users,
+    CheckCircle2,
     Files,
     Layers,
     Clock,
@@ -18,91 +18,91 @@ interface DashboardStatsProps {
 }
 
 export function DashboardStats({ dashboardData }: DashboardStatsProps) {
-    // Graceful fallbacks using 0 if the backend omits any fields
     const summary = dashboardData.dashboard?.summary;
-    
+
     const stats = [
         {
             title: "Total Posts",
             value: summary?.totalArticles || 0,
             icon: ListTodo,
-            color: "text-blue-600",
-            bgColor: "bg-blue-100 dark:bg-blue-900/30",
-        },
-        {
-            title: "Total Users",
-            value: summary?.totalUsers || 0,
-            icon: Users,
-            color: "text-pink-600",
-            bgColor: "bg-pink-100 dark:bg-pink-900/30",
-        },
-        {
-            title: "Total Employees",
-            value: summary?.totalEmployees || 0,
-            icon: CheckCircle2, 
-            color: "text-green-600",
-            bgColor: "bg-green-100 dark:bg-green-900/30",
+            iconColor: "text-[#388e3c]", // green
+            bgColor: "bg-[#e5f5cd] dark:bg-[#388e3c]/20",
         },
         {
             title: "Total Comments",
             value: summary?.totalComments || 0,
             icon: MessageCircle,
-            color: "text-slate-600 dark:text-slate-300",
-            bgColor: "bg-slate-100 dark:bg-slate-800/50",
+            iconColor: "text-[#343a40]", // dark grey
+            bgColor: "bg-[#e2e6ea] dark:bg-[#343a40]/40",
+        },
+        {
+            title: "Total Employees",
+            value: summary?.totalEmployees || 0,
+            icon: CheckCircle2,
+            iconColor: "text-[#00acc1]", // cyan
+            bgColor: "bg-[#e0f7fa] dark:bg-[#00acc1]/20",
+        },
+        {
+            title: "Total Users",
+            value: summary?.totalUsers || 0,
+            icon: Users,
+            iconColor: "text-[#d81b60]", // pink
+            bgColor: "bg-[#f8bbd0] dark:bg-[#d81b60]/20",
         },
         {
             title: "Pending Articles",
             value: summary?.totalPendingArticles || 0,
             icon: Clock,
-            color: "text-amber-600",
-            bgColor: "bg-amber-100 dark:bg-amber-900/30",
+            iconColor: "text-[#5e35b1]", // purple
+            bgColor: "bg-[#ede7f6] dark:bg-[#5e35b1]/20",
         },
         {
             title: "Approved Articles",
             value: summary?.totalApprovedArticles || 0,
             icon: FileCheck,
-            color: "text-cyan-600",
-            bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
+            iconColor: "text-[#039be5]", // blue
+            bgColor: "bg-[#e1f5fe] dark:bg-[#039be5]/20",
         },
         {
             title: "Total Categories",
             value: summary?.totalCategory || 0,
             icon: Layers,
-            color: "text-indigo-600",
-            bgColor: "bg-indigo-100 dark:bg-indigo-900/30",
+            iconColor: "text-[#fbc02d]", // yellow
+            bgColor: "bg-[#fff9c4] dark:bg-[#fbc02d]/20",
         },
         {
             title: "Total Languages",
             value: summary?.totalLanguage || 0,
             icon: Files,
-            color: "text-emerald-600",
-            bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+            iconColor: "text-[#43a047]", // mint green
+            bgColor: "bg-[#c8e6c9] dark:bg-[#43a047]/20",
         },
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
-                <div 
-                    key={index} 
+                <div
+                    key={index}
                     className={cn(
-                        "flex items-center p-4 rounded-xl transition-all hover:scale-[1.02] cursor-default border shadow-sm",
+                        "flex items-center p-6 rounded-xl transition-all hover:scale-[1.02] cursor-default shadow-sm border-none",
                         stat.bgColor
                     )}
                 >
-                    <div className={cn("p-3 rounded-lg mr-4 bg-white/50 dark:bg-black/20", stat.color)}>
-                        <stat.icon className="h-8 w-8" strokeWidth={2.5} />
+                    <div className="mr-6">
+                        <stat.icon className={cn("h-14 w-14", stat.iconColor)} strokeWidth={2} />
                     </div>
-                    <div>
-                        <p className={cn("text-sm font-bold text-muted-foreground/80 dark:text-muted-foreground", "text-black/70 dark:text-white/70")}>
+                    <div className="flex flex-col justify-center">
+                        <h3 className="text-lg font-bold text-black dark:text-white leading-tight">
                             {stat.title}
-                        </p>
-                        <h3 className={cn("text-2xl font-bold", "text-black/90 dark:text-white mt-1")}>
-                            {stat.value}
                         </h3>
+                        <p className="text-xl font-medium text-black dark:text-white mt-1">
+                            {stat.value}
+                        </p>
                     </div>
                 </div>
             ))}
         </div>
     );
 }
+
