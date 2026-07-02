@@ -1,99 +1,115 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { sidebarNav } from "@/config/nav";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-  onLinkClick?: () => void;
+    onLinkClick?: () => void;
 }
 
 export function SidebarContent({ className, onLinkClick }: SidebarProps) {
     const pathname = usePathname();
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+    const toggleExpand = (title: string) => {
+        setExpanded(prev => ({ ...prev, [title]: !prev[title] }));
+    };
 
     return (
-        <div className={cn("pb-12 h-full flex flex-col bg-background/50 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60", className)}>
+        <div className={cn("pb-12 h-full flex flex-col bg-white dark:bg-background/95", className)}>
             <div className="space-y-4 py-4 flex flex-col h-full overflow-hidden">
-                <div className="px-3 py-2 flex-1 flex flex-col min-h-0">
+                <div className="py-2 flex-1 flex flex-col min-h-0">
                     <div className="mb-6 px-4 relative flex-shrink-0">
-                        <Search className="absolute left-6 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        <Input placeholder="Search modules..." className="h-9 pl-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-ring" />
+                        <Input placeholder="Menu Search..." className="h-10 border text-sm rounded-none focus-visible:ring-1 focus-visible:ring-[#2e7d32]" />
                     </div>
-                    <ScrollArea className="flex-1 px-1 pr-3 w-full" type="always">
-                        <div className="space-y-6 pb-2">
+                    <ScrollArea className="flex-1 w-full" type="always">
+                        <div className="space-y-1 pb-2">
                             {sidebarNav.map((group, groupIndex) => (
-                                <div key={groupIndex} className="px-3">
-                                    <h2 className="mb-2 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                        {group.title}
-                                    </h2>
-                                    <div className="space-y-1">
-                            {group.items.map((item) => {
-                                const isActive = pathname === item.href;
-                                
-                                if (item.items && item.items.length > 0) {
-                                    return (
-                                        <DropdownMenu key={item.title}>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant={isActive ? "secondary" : "ghost"}
-                                                    className={cn(
-                                                        "w-full justify-start h-9 px-4 font-normal transition-all duration-200",
-                                                        isActive
-                                                            ? "bg-primary/10 text-primary hover:bg-primary/15 font-medium shadow-sm"
-                                                            : "text-muted-foreground hover:text-foreground hover:translate-x-1"
-                                                    )}
-                                                >
-                                                    <item.icon className={cn("mr-3 h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
-                                                    {item.title}
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="start" side="right" className="w-48 ml-2">
-                                                {item.items.map((subItem) => (
-                                                    <DropdownMenuItem key={subItem.title} asChild>
-                                                        <Link href={subItem.href} className="cursor-pointer">
-                                                            <subItem.icon className="mr-2 h-4 w-4" />
-                                                            {subItem.title}
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    );
-                                }
+                                <div key={groupIndex} className={cn("space-y-1", groupIndex !== 0 && "mt-1")}>
+                                    {group.items.map((item) => {
+                                        const isSubItemActive = item.items?.some(sub => pathname === sub.href);
+                                        const isActive = pathname === item.href || isSubItemActive;
 
-                                return (
-                                    <Button
-                                        key={item.title}
-                                        variant={isActive ? "secondary" : "ghost"}
-                                        className={cn(
-                                            "w-full justify-start h-9 px-4 font-normal transition-all duration-200",
-                                            isActive
-                                                ? "bg-primary/10 text-primary hover:bg-primary/15 font-medium shadow-sm"
-                                                : "text-muted-foreground hover:text-foreground hover:translate-x-1"
-                                        )}
-                                        asChild
-                                        onClick={onLinkClick}
-                                    >
-                                        <Link href={item.href}>
-                                            <item.icon className={cn("mr-3 h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
-                                            {item.title}
-                                        </Link>
-                                    </Button>
-                                );
-                            })}
-                                    </div>
+                                        if (item.items && item.items.length > 0) {
+                                            const isExpanded = expanded[item.title] !== undefined ? expanded[item.title] : isSubItemActive;
+
+                                            return (
+                                                <div key={item.title} className="space-y-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        onClick={() => toggleExpand(item.title)}
+                                                        className={cn(
+                                                            "w-full justify-between h-11 px-6 font-normal transition-all duration-200 rounded-none",
+                                                            isExpanded || isActive
+                                                                ? "bg-[#e8f5e9] text-[#2e7d32] hover:bg-[#c8e6c9] dark:bg-green-900/20 dark:text-green-400 border-l-4 border-[#2e7d32]"
+                                                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50 border-l-4 border-transparent"
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <item.icon className={cn("mr-3 h-5 w-5", (isExpanded || isActive) ? "text-[#2e7d32] dark:text-green-400" : "text-muted-foreground")} />
+                                                            {item.title}
+                                                        </div>
+                                                        <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isExpanded && "rotate-90")} />
+                                                    </Button>
+
+                                                    {isExpanded && (
+                                                        <div className="space-y-1 mt-1 bg-[#f9fbf9] dark:bg-black/10 py-2">
+                                                            {item.items.map((subItem) => {
+                                                                const isSubActive = pathname === subItem.href;
+                                                                return (
+                                                                    <Button
+                                                                        key={subItem.title}
+                                                                        variant="ghost"
+                                                                        asChild
+                                                                        onClick={onLinkClick}
+                                                                        className={cn(
+                                                                            "w-full justify-start h-9 pl-12 pr-6 font-normal transition-all duration-200 rounded-none",
+                                                                            isSubActive
+                                                                                ? "text-[#2e7d32] dark:text-green-400 font-medium"
+                                                                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                                                        )}
+                                                                    >
+                                                                        <Link href={subItem.href}>
+                                                                            <Circle className={cn("mr-3 h-2 w-2 fill-current", isSubActive ? "text-[#2e7d32] dark:text-green-400" : "text-[#4caf50]")} />
+                                                                            {subItem.title}
+                                                                        </Link>
+                                                                    </Button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <Button
+                                                key={item.title}
+                                                variant="ghost"
+                                                className={cn(
+                                                    "w-full justify-start h-11 px-6 font-normal transition-all duration-200 rounded-none",
+                                                    isActive
+                                                        ? "bg-[#e8f5e9] text-[#2e7d32] hover:bg-[#c8e6c9] dark:bg-green-900/20 dark:text-green-400 font-medium border-l-4 border-[#2e7d32]"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50 border-l-4 border-transparent"
+                                                )}
+                                                asChild
+                                                onClick={onLinkClick}
+                                            >
+                                                <Link href={item.href}>
+                                                    <item.icon className={cn("mr-3 h-5 w-5", isActive ? "text-[#2e7d32] dark:text-green-400" : "text-muted-foreground")} />
+                                                    {item.title}
+                                                </Link>
+                                            </Button>
+                                        );
+                                    })}
                                 </div>
                             ))}
                         </div>
@@ -106,9 +122,10 @@ export function SidebarContent({ className, onLinkClick }: SidebarProps) {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  return (
-    <div className={cn("border-r", className)}>
-       <SidebarContent /> 
-    </div>
-  );
+    return (
+        <div className={cn("border-r bg-white dark:bg-background", className)}>
+            <SidebarContent />
+        </div>
+    );
 }
+
