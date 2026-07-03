@@ -40,9 +40,9 @@ export interface Article {
 export const postService = {
   getCategories: async (): Promise<Category[]> => {
       try {
-        console.log("Fetching categories from /categories");
+        console.log("Fetching categories from /categories/admin");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response: any = await api.get('/categories');
+        const response: any = await api.get('/categories/admin');
         console.log("Raw Categories Response:", response);
         let items: Category[] = [];
         if (Array.isArray(response)) items = response;
@@ -84,10 +84,10 @@ export const postService = {
       }
   },
 
-  updateCategoryOrder: async (orderedIds: string[]): Promise<boolean> => {
+  updateCategoryOrder: async (categories: { id: string; order: number }[]): Promise<boolean> => {
       try {
-          // Send an array of IDs to the backend to update their order
-          await api.put('/categories/reorder', { orderedIds });
+          // Send the complete reordered category list with updated order values
+          await api.patch('/categories/reorder', { categories });
           return true;
       } catch (error) {
           console.error("Failed to reorder categories", error);

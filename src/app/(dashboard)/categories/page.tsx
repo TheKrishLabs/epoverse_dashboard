@@ -108,11 +108,15 @@ export default function CategoriesPage() {
     // Optimistically update the UI
     setCategories(newOrder);
 
-    // Get array of IDs in new order
-    const orderedIds = newOrder.map(cat => cat._id);
+    // Build the complete reordered category list with updated order values
+    // Backend requires ALL categories with their new order, not just the dragged one
+    const reorderedCategories = newOrder.map((cat, index) => ({
+      id: cat._id,
+      order: index + 1,
+    }));
     
     try {
-      await postService.updateCategoryOrder(orderedIds);
+      await postService.updateCategoryOrder(reorderedCategories);
     } catch (err) {
       console.error("Failed to reorder categories", err);
       setError("Failed to reorder categories. Please try again.");
