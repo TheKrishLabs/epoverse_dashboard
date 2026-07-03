@@ -34,10 +34,17 @@ export const getColumns = (onDelete: (id: string, name: string) => void): Column
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        const isActive = status === "Active" || status === "active" || status === "Published";
+        const category = row.original;
         
-        if (!status) {
+        // Handle both 'status' string and 'isActive' boolean from backend
+        let displayStatus = category.status;
+        if (!displayStatus && category.isActive !== undefined) {
+            displayStatus = category.isActive ? "Active" : "Inactive";
+        }
+
+        const isActive = displayStatus === "Active" || displayStatus === "active" || displayStatus === "Published";
+        
+        if (!displayStatus) {
             return <Badge variant="secondary">Unknown</Badge>;
         }
 
@@ -45,7 +52,7 @@ export const getColumns = (onDelete: (id: string, name: string) => void): Column
             <Badge 
                 className={isActive ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-zinc-500 hover:bg-zinc-600 text-white"}
             >
-                {status}
+                {displayStatus}
             </Badge>
         )
     }

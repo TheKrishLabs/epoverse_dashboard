@@ -10,6 +10,7 @@ export interface Category {
     description?: string;
     slug?: string;
     status?: string;
+    isActive?: boolean;
 }
 
 export interface Article {
