@@ -54,23 +54,26 @@ function SortableRow({ row, getRowId }: { row: any; getRowId: (row: any) => stri
     isDragging,
   } = useSortable({ id: getRowId(row.original) })
 
+  const transformString = CSS.Transform.toString(transform)
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: transformString ? `${transformString}${isDragging ? " scale(1.01)" : ""}` : undefined,
+    transition: [transition, "box-shadow 200ms ease"].filter(Boolean).join(", "),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(isDragging ? { position: "relative", zIndex: 9999, backgroundColor: "var(--background)" } as any : {}),
+    ...(isDragging ? { position: "relative", zIndex: 9999, backgroundColor: "var(--background)", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" } as any : {}),
   }
 
   return (
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={`divide-x divide-gray-200 hover:bg-gray-50/50 transition-colors ${
-        isDragging ? "opacity-50 shadow-md" : ""
+      {...attributes}
+      {...listeners}
+      className={`divide-x divide-gray-200 transition-colors cursor-grab active:cursor-grabbing [&_button]:cursor-pointer [&_a]:cursor-pointer ${
+        isDragging ? "opacity-90" : "hover:bg-gray-50/50"
       }`}
     >
       <TableCell className="px-4 py-3 align-middle w-10 text-center">
-        <div {...attributes} {...listeners} className="cursor-grab hover:text-gray-900 text-gray-500 inline-flex items-center justify-center">
+        <div className="cursor-grab hover:text-gray-900 text-gray-500 inline-flex items-center justify-center">
           <GripVertical className="h-4 w-4" />
         </div>
       </TableCell>
@@ -98,7 +101,12 @@ export function DraggableDataTable<TData>({
   })
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 500,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
