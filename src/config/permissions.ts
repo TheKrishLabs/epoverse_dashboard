@@ -131,5 +131,26 @@ export const MODULE_PERMISSIONS: PermissionModule[] = [
     subModules: [
       { id: "theme_setup_main", name: "Theme setup" }
     ]
+  },
+   {
+    id: "user",
+    name: "User",
+    subModules: [
+      { id: "user_main", name: "User" }
+    ]
+  },
+   {
+    id: "language",
+    name: "Language",
+    subModules: [
+      { id: "language_main", name: "Language" }
+    ]
+  },
+  {
+    id: "role",
+    name: "Role",
+    subModules: [
+      { id: "role_main", name: "Role" }
+    ]
   }
 ];
