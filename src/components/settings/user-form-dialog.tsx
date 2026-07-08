@@ -105,7 +105,7 @@ export function UserFormDialog({
       }
       
       // Always append userType as admin for this specific dashboard portal
-      payload.userType = "admin"
+      payload.userType = "employee"
       
       if (data.password) {
         payload.password = data.password
