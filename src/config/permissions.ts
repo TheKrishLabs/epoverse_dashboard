@@ -132,14 +132,14 @@ export const MODULE_PERMISSIONS: PermissionModule[] = [
       { id: "theme_setup_main", name: "Theme setup" }
     ]
   },
-   {
+  {
     id: "user",
     name: "User",
     subModules: [
       { id: "user_main", name: "User" }
     ]
   },
-   {
+  {
     id: "language",
     name: "Language",
     subModules: [
@@ -151,6 +151,13 @@ export const MODULE_PERMISSIONS: PermissionModule[] = [
     name: "Role",
     subModules: [
       { id: "role_main", name: "Role" }
+    ]
+  },
+  {
+    id: "article",
+    name: "Article",
+    subModules: [
+      { id: "article_main", name: "Article" }
     ]
   }
 ];
