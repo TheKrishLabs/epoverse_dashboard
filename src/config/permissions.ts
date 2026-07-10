@@ -167,11 +167,12 @@ export const MODULE_PERMISSIONS: PermissionModule[] = [
       { id: "story_main", name: "Story" }
     ]
   },
+
   {
-    id: "comment",
-    name: "Comment",
+    id: "article_report",
+    name: "Article report",
     subModules: [
-      { id: "comment_main", name: "Comment" }
+      { id: "article_report_main", name: "Article report" }
     ]
   }
 ];
