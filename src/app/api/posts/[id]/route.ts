@@ -28,6 +28,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     
     // Handle specific types (e.g., checkbox booleans)
     if (updateData.isLatest) updateData.isLatest = updateData.isLatest === 'true';
+    if (updateData.isTrending) updateData.isTrending = updateData.isTrending === 'true';
     if (updateData.tags) {
         // If tags were appended multiple times, entries() only gets the last one. 
         // We'd need getAll() if we care about arrays in the mock.

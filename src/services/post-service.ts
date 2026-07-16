@@ -33,6 +33,7 @@ export interface Article {
     metaKeywords?: string[];
     metaDescription?: string;
     isLatest?: boolean;
+    isTrending?: boolean;
     status?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -209,6 +210,7 @@ export const postService = {
     metaKeywords?: string[];
     metaDescription?: string;
     isLatest?: boolean;
+    isTrending?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } | FormData): Promise<any> => {
     try {

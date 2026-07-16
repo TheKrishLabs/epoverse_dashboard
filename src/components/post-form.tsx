@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,7 +11,6 @@ import { authService, User } from "@/services/auth-service";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,7 +27,7 @@ import dynamic from "next/dynamic";
 
 const CKEditorComponent = dynamic(() => import("@/components/ui/ck-editor"), { 
     ssr: false,
-    loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-md" />
+    loading: () => <div className="h-[400px] w-full bg-zinc-100 dark:bg-zinc-800 animate-pulse rounded-lg" />
 });
 
 interface PostData {
@@ -45,6 +43,7 @@ interface PostData {
     image: string | null;
     settings: {
         latest: boolean;
+        trending: boolean;
         breaking: boolean;
         feature: boolean;
         recommended: boolean;
@@ -97,17 +96,7 @@ const DEFAULT_DATA: PostData = {
 
 export function PostForm({ initialData, isEditing = false }: PostFormProps) {
     const router = useRouter();
-    // const data = initialData || DEFAULT_DATA;
 
-    // Initialize state from initialData (which might be flat PostData from service or nested local PostData)
-    // We need to handle both or standardize. 
-    // Since we are moving to service, initialData passed from Edit page will likely be PostData from service.
-    // Let's assume initialData is any for now to handle mapping safely or update interface.
-    // But better to update the interface to match what we expect.
-    
-    // Actually, let's look at how we use it. 
-    // If we passed PostData from service, we need to map it back to form state.
-    
     const [languages, setLanguages] = useState<Language[]>([]);
     const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
     const [isLanguageError, setIsLanguageError] = useState(false);
@@ -138,13 +127,6 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 setCategories(catData);
             } catch (error) {
                 console.error("Failed to load initial data", error);
-                // We might want to handle errors individually, but for now this catches if *any* fails. 
-                // To handle individually, we'd wrap api calls or check which failed. 
-                // Simple approach: set both errors if one fails, or refine logic.
-                // Let's refine logic slightly to allow one to succeed if the other fails?
-                // Promise.all rejects if any rejects.
-                // For robust UI, better to use allSettled or catch individually.
-                // Reverting to individual blocks or just setting error generic.
                 setIsLanguageError(true); 
                 setIsCategoryError(true);
             } finally {
@@ -155,19 +137,11 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         fetchData();
     }, []);
 
-    /* const [date, setDate] = useState<Date | undefined>(
-        initialData?.date ? new Date(initialData.date) : 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (initialData as any)?.releaseDate ? new Date((initialData as any).releaseDate) : 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (initialData as any)?.createdAt ? new Date((initialData as any).createdAt) : undefined
-    ); */
     const [content, setContent] = useState(initialData?.content || "");
     const handleContentChange = useCallback((newContent: string) => {
         setContent(newContent);
     }, []);
     const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(
-        // Use initial string URL if editing, otherwise null
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         initialData?.image || (initialData as any)?.featuredImage || null
     );
@@ -185,7 +159,6 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         const catData: any = initialData?.category;
         return typeof catData === 'object' && catData ? catData._id : (catData || "");
     });
-    // const [subCategory, setSubCategory] = useState(initialData?.subCategory || "");
     const [headLine, setHeadLine] = useState(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = initialData as any;
@@ -199,13 +172,19 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [reporter] = useState(initialData?.reporter || (initialData as any)?.postBy || "");
 
+    // Position State (functional bound state variables)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [categoryPosition, setCategoryPosition] = useState((initialData as any)?.categoryPosition || "");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [homePosition, setHomePosition] = useState((initialData as any)?.homePosition || "");
+
     // SEO & Settings State
     const [settings, setSettings] = useState(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = initialData as any;
         return {
             latest: d?.isLatest || d?.settings?.latest || false,
-            // Trending: d?.settings?.Trending || false,
+            trending: d?.isTrending || d?.settings?.trending || false,
             recommended: d?.settings?.recommended || false,
             publish: d?.status === "published" || d?.status === "Publish" || d?.settings?.publish || false,
         };
@@ -236,6 +215,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
     const [imageTitle, setImageTitle] = useState((initialData as any)?.imageTitle || "");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [thumbnail, setThumbnail] = useState((initialData as any)?.thumbnail || "");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [videoUrl, setVideoUrl] = useState((initialData as any)?.videoUrl || "");
 
     const [errors, setErrors] = useState<Record<string, boolean>>({});
 
@@ -250,7 +231,6 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         setImageError(null);
         
         if (file) {
-            // Optional: add dimension checks similar to opinion-form if needed here
             const objectUrl = URL.createObjectURL(file);
             setImagePreviewUrl(objectUrl);
             setImageFile(file);
@@ -353,9 +333,14 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             if (imageAlt) formData.append("imageAlt", imageAlt);
             if (imageTitle) formData.append("imageTitle", imageTitle);
             if (thumbnail) formData.append("thumbnail", thumbnail);
+            if (videoUrl) formData.append("videoUrl", videoUrl);
+
+            if (categoryPosition) formData.append("categoryPosition", categoryPosition);
+            if (homePosition) formData.append("homePosition", homePosition);
             
             if (seo.description) formData.append("metaDescription", seo.description);
             formData.append("isLatest", String(settings.latest));
+            formData.append("isTrending", String(settings.trending));
             
             // Tags and Meta Keywords
             if (keywordList.length > 0) {
@@ -383,69 +368,86 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 space-y-2 sm:space-y-0">
-                 <div className="flex items-center gap-4">
+        <div className="mx-auto w-full select-none pb-24">
+            
+            {/* Header Area */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-2 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center gap-4">
                     {isEditing && (
-                         <Link href="/post/list">
-                            <Button variant="ghost" size="icon">
-                                <ArrowLeft className="h-4 w-4" />
+                        <Link href="/post/list">
+                            <Button variant="ghost" size="icon" className="rounded-full border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 h-9 w-9">
+                                <ArrowLeft className="h-4 w-4 text-zinc-800 dark:text-zinc-200" />
                             </Button>
                         </Link>
                     )}
-                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{isEditing ? "Edit Post" : "Add Post"}</h2>
+                    <div>
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                            {isEditing ? "Edit Post" : "Add Post"}
+                        </h2>
+                    </div>
                 </div>
             </div>
 
-            {/* Basic Information Section */}
-            <div className="grid gap-6 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-                <Label className={cn(errors.language && "text-red-500")}>Language <span className="text-red-500">*</span></Label>
-                <Select onValueChange={setLanguage} value={language}>
-                <SelectTrigger className={cn(errors.language && "border-red-500")}>
-                    <SelectValue placeholder="Select Language" />
-                </SelectTrigger>
-                 <SelectContent>
-                    {isLoadingLanguages ? (
-                        <SelectItem value="loading" disabled>Loading languages...</SelectItem>
-                    ) : isLanguageError ? (
-                        <SelectItem value="error" disabled>Failed to load languages</SelectItem>
-                    ) : languages.length > 0 ? (
-                        languages.map((lang) => (
-                            <SelectItem key={lang._id} value={lang._id}>
-                                {lang.name}
-                            </SelectItem>
-                        ))
-                    ) : (
-                        <SelectItem value="empty" disabled>No languages available</SelectItem>
-                    )}
-                </SelectContent>
-                </Select>
-                {errors.language && <span className="text-xs text-red-500">Required</span>}
-            </div>
-            <div className="space-y-2">
-                <Label className={cn(errors.category && "text-red-500")}>Category <span className="text-red-500">*</span></Label>
-                <Select onValueChange={setCategory} value={category}>
-                <SelectTrigger className={cn(errors.category && "border-red-500")}>
-                    <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                    {isLoadingCategories ? (
-                        <SelectItem value="loading" disabled>Loading categories...</SelectItem>
-                    ) : isCategoryError ? (
-                        <SelectItem value="error" disabled>Failed to load categories</SelectItem>
-                    ) : categories.length > 0 ? (
-                        categories.map((cat) => (
-                            <SelectItem key={cat._id} value={cat._id}>
-                                {cat.name}
-                            </SelectItem>
-                        ))
-                    ) : (
-                        <SelectItem value="empty" disabled>No categories available</SelectItem>
-                    )}
-                </SelectContent>
-                </Select>
-                {errors.category && <span className="text-xs text-red-500">Required</span>}
+            <div className="space-y-10">
+                
+                {/* Categorization */}
+                <div className="space-y-6 pt-4">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Categorization</h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                        {/* Language Selector */}
+                        <div className="space-y-2">
+                            <Label className={cn("text-sm font-semibold text-zinc-800 dark:text-zinc-200", errors.language && "text-zinc-950 dark:text-zinc-50 underline decoration-2")}>
+                                Language <span className="text-red-500 font-normal">{errors.language ? "(Required)" : "*"}</span>
+                            </Label>
+                            <Select onValueChange={setLanguage} value={language}>
+                                <SelectTrigger className={cn("bg-transparent border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100", errors.language && "border-zinc-950 dark:border-zinc-50 border-2")}>
+                                    <SelectValue placeholder="Select Language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingLanguages ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : isLanguageError ? (
+                                        <SelectItem value="error" disabled>Error loading</SelectItem>
+                                    ) : languages.length > 0 ? (
+                                        languages.map((lang) => (
+                                            <SelectItem key={lang._id} value={lang._id}>
+                                                {lang.name}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="empty" disabled>No languages</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Category Selector */}
+                        <div className="space-y-2">
+                            <Label className={cn("text-sm font-semibold text-zinc-800 dark:text-zinc-200", errors.category && "text-zinc-955 dark:text-zinc-50 underline decoration-2")}>
+                                Category <span className="text-red-500 font-normal">{errors.category ? "(Required)" : "*"}</span>
+                            </Label>
+                            <Select onValueChange={setCategory} value={category}>
+                                <SelectTrigger className={cn("bg-transparent border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100", errors.category && "border-zinc-950 dark:border-zinc-50 border-2")}>
+                                    <SelectValue placeholder="Select Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingCategories ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : isCategoryError ? (
+                                        <SelectItem value="error" disabled>Error loading</SelectItem>
+                                    ) : categories.length > 0 ? (
+                                        categories.map((cat) => (
+                                            <SelectItem key={cat._id} value={cat._id}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="empty" disabled>No categories</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+               {/* {errors.category && <span className="text-xs text-red-500">Required</span>}
             </div>
             {/* <div className="space-y-2">
                 <Label>Sub Category</Label>
@@ -486,109 +488,102 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 </Popover>
                 {errors.date && <span className="text-xs text-red-500">Required</span>}
             </div> */}
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                    <Label>Category Position</Label>
-                    <Select>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Position" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="top">Top</SelectItem>
-                            <SelectItem value="feature">Feature</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label>Home Position</Label>
-                    <Select>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Position" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="top">Hero</SelectItem>
-                            <SelectItem value="sidebar">Sidebar</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <Label>Short Info</Label>
-                <Input 
-                    placeholder="Enter short Details" 
-                    value={shortHead}
-                    onChange={(e) => setShortHead(e.target.value)}
-                />
-            </div>
-            
-            <div className="space-y-2">
-                <Label className={cn(errors.headLine && "text-red-500")}>Head Line <span className="text-red-500">*</span></Label>
-                <Input 
-                    placeholder="Enter main headline" 
-                    value={headLine} 
-                    onChange={(e) => setHeadLine(e.target.value)}
-                    className={cn(errors.headLine && "border-red-500")}
-                />
-                {errors.headLine && <span className="text-xs text-red-500">Required</span>}
-            </div>
-
-            {/* Details Section */}
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <Label className={cn(errors.content && "text-red-500")}>
-                        Details <span className="text-red-500">*</span>
-                    </Label>
-                    <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAiGenerate}
-                        disabled={isGenerating}
-                        className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5"
-                    >
-                        {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        {isGenerating ? "Generating..." : "Ai Writer"}
-                    </Button>
-                </div>
-                {errors.content && <span className="text-xs text-red-500">Required</span>}
-                {/* CKEditor with Source, Image, Table, HTML/CSS support */}
-                <div className="pb-2 mb-16">
-                    <CKEditorComponent value={content} onChange={handleContentChange} />
-                </div>
-            </div>
-
-            {/* Media Section */}
-            <div className="space-y-2 pt-8">
-                <h3 className="text-lg font-medium">Media</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Image Upload/URL Source */}
-                    <div className="space-y-4 p-4 border rounded-md bg-gray-50/50">
-                        <Label className="text-base font-semibold text-gray-800">Featured Image (URL or Upload)</Label>
-                        
-                        {/* URL Option */}
-                        <div className="space-y-2">
-                            <Label className="text-sm">Image URL</Label>
-                            <Input 
-                                placeholder="https://example.com/image.jpg"
-                                value={!imageFile ? (imagePreviewUrl || "") : ""}
-                                onChange={(e) => {
-                                    setImageFile(null); // Clear file if URL is typed
-                                    setImagePreviewUrl(e.target.value);
-                                }}
-                            />
                         </div>
 
-                        <div className="relative flex items-center py-2">
-                            <div className="flex-grow border-t border-gray-300"></div>
-                            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">OR</span>
-                            <div className="flex-grow border-t border-gray-300"></div>
+                        {/* Category Position */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Category position</Label>
+                            <Select onValueChange={setCategoryPosition} value={categoryPosition}>
+                                <SelectTrigger className="bg-transparent border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100">
+                                    <SelectValue placeholder="Select Position" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="top">Top Feed</SelectItem>
+                                    <SelectItem value="feature">Featured Spot</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        {/* File Option */}
+                        {/* Home Position */}
                         <div className="space-y-2">
-                            <Label className="text-sm">Upload Image</Label>
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Home Position</Label>
+                            <Select onValueChange={setHomePosition} value={homePosition}>
+                                <SelectTrigger className="bg-transparent border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100">
+                                    <SelectValue placeholder="Select Position" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="top">Hero </SelectItem>
+                                    <SelectItem value="sidebar">Sidebar</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Content</h3>
+                    
+                    {/* Short Info */}
+                    <div className="space-y-2">
+                        <Label className={cn("text-sm font-semibold text-zinc-800 dark:text-zinc-200", errors.headLine && "text-zinc-950 dark:text-zinc-50 underline decoration-2")}>
+                            Short Info 
+                        </Label>
+                        <Input 
+                            placeholder="Enter short detail..." 
+                            value={headLine} 
+                            onChange={(e) => setHeadLine(e.target.value)}
+                            className={cn(
+                                "text-lg font-bold placeholder:text-zinc-400 bg-transparent border-zinc-200 dark:border-zinc-800 focus-visible:ring-1 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-50 focus-visible:border-zinc-950 dark:focus-visible:border-zinc-50 py-6",
+                                errors.headLine && "border-zinc-950 dark:border-zinc-50 border-2"
+                            )}
+                        />
+                    </div>
+
+                    {/* Head Line*/}
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Head Line <span className="text-red-500">*</span></Label>
+                        <Input 
+                            placeholder="Enter main headline..." 
+                            value={shortHead}
+                            onChange={(e) => setShortHead(e.target.value)}
+                            className="bg-transparent border-zinc-200 dark:border-zinc-800 focus-visible:ring-1 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-50"
+                        />
+                    </div>
+
+                    {/* Detail */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center pb-1">
+                            <Label className={cn("text-sm font-semibold text-zinc-800 dark:text-zinc-200", errors.content && "text-zinc-955 dark:text-zinc-50 underline decoration-2")}>
+                                Detail <span className="text-red-500 font-normal">{errors.content ? "(Required)" : "*"}</span>
+                            </Label>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleAiGenerate}
+                                disabled={isGenerating}
+                                className="h-8 bg-zinc-900 hover:bg-zinc-800 text-zinc-50 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm gap-1.5 px-3"
+                            >
+                                {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                {isGenerating ? "AI writing..." : "AI Writer"}
+                            </Button>
+                        </div>
+                        <div className={cn("rounded-lg overflow-hidden", errors.content && "border-2 border-zinc-950 dark:border-zinc-50")}>
+                            <CKEditorComponent value={content} onChange={handleContentChange} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Media</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center">
+                        {/* Upload Image box */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Upload Image</Label>
                             <Input 
                                 type="file" 
                                 id="featured-image-upload"
@@ -596,160 +591,246 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                                 onChange={handlePhotoChange} 
                                 accept="image/jpeg, image/jpg, image/png, image/webp" 
                             />
-                            <div className="flex items-center gap-4">
-                                <Label 
-                                    htmlFor="featured-image-upload" 
-                                    className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium transition-colors w-full justify-center text-gray-600"
-                                >
-                                    <UploadCloud className="h-4 w-4" />
-                                    Choose File
-                                </Label>
-                            </div>
-                            {imageError && <p className="text-xs text-red-500 font-medium mt-1">{imageError}</p>}
+                            <Label 
+                                htmlFor="featured-image-upload" 
+                                className="flex items-center justify-center gap-2 cursor-pointer border border-dashed border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 px-4 py-3 rounded-lg text-sm font-medium transition-all text-zinc-500 hover:text-zinc-755 dark:text-zinc-400 dark:hover:text-zinc-300"
+                            >
+                                <UploadCloud className="h-4 w-4 text-zinc-400" />
+                                <span>Choose Image File</span>
+                            </Label>
+                            {imageError && <p className="text-xs text-zinc-950 dark:text-zinc-50 font-bold mt-1">{imageError}</p>}
                         </div>
 
-                        {/* Unified Preview */}
-                        {imagePreviewUrl && (
-                            <div className="mt-4">
-                                <Label className="text-xs text-muted-foreground mb-1 block">Preview:</Label>
-                                <div className="relative w-full h-40 sm:h-48 rounded-md overflow-hidden border bg-white flex items-center justify-center">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={imagePreviewUrl} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-sm"
-                                        onClick={removeImage}
-                                        type="button"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* Other Media Options */}
-                    <div className="space-y-4">
+                        {/* OR separator */}
+                        <div className="flex md:flex-col items-center justify-center gap-2 md:h-12 py-2">
+                            <div className="h-px w-full md:w-px md:h-full bg-zinc-200 dark:bg-zinc-850 flex-1"></div>
+                            <span className="text-xs font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest px-2 pt-5">-----OR-----</span>
+                            <div className="h-px w-full md:w-px md:h-full bg-zinc-200 dark:bg-zinc-850 flex-1"></div>
+                        </div>
+
+                        {/* URL Input */}
                         <div className="space-y-2">
-                            <Label>Thumbnail URL (Optional)</Label>
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Image URL</Label>
                             <Input 
-                                placeholder="https://example.com/thumb.jpg" 
-                                value={thumbnail}
-                                onChange={(e) => setThumbnail(e.target.value)}
+                                placeholder="https://example.com/image.jpg"
+                                value={!imageFile ? (imagePreviewUrl || "") : ""}
+                                onChange={(e) => {
+                                    setImageFile(null);
+                                    setImagePreviewUrl(e.target.value);
+                                }}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800 focus-visible:ring-1 focus-visible:ring-zinc-950"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label>Video URL</Label>
-                            <Input placeholder="https://youtube.com/..." />
+                    </div>
+
+                    {/* Unified Preview if present */}
+                    {imagePreviewUrl && (
+                        <div className="space-y-1 max-w-md">
+                            <Label className="text-xs text-zinc-400 block font-semibold">Image preview</Label>
+                            <div className="relative w-full h-48 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-zinc-950/80 hover:bg-zinc-900/90 text-zinc-50 border border-zinc-800"
+                                    onClick={removeImage}
+                                    type="button"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Rest of Media details - in a horizontal 3-column grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Thumbnail URL (Optional)</Label>
+                            <Input 
+                                placeholder="https://example.com/thumbnail.jpg" 
+                                value={thumbnail}
+                                onChange={(e) => setThumbnail(e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Video link</Label>
+                            <Input 
+                                placeholder="https://youtube.com/..." 
+                                value={videoUrl}
+                                onChange={(e) => setVideoUrl(e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Image alt text</Label>
+                            <Input 
+                                placeholder="Alt description for SEO" 
+                                value={imageAlt}
+                                onChange={(e) => setImageAlt(e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                            />
                         </div>
                     </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label>Image Alt</Label>
-                        <Input 
-                            placeholder="Alt text" 
-                            value={imageAlt}
-                            onChange={(e) => setImageAlt(e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Image Title</Label>
+
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Image title</Label>
                         <Input 
                             placeholder="Image title" 
                             value={imageTitle}
                             onChange={(e) => setImageTitle(e.target.value)}
+                            className="bg-transparent border-zinc-200 dark:border-zinc-800"
                         />
                     </div>
                 </div>
-            </div>
 
-            {/* SEO Section */}
-            <div className="space-y-2">
-                <h3 className="text-lg font-medium">SEO</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label>Custom URL</Label>
-                        <Input 
-                            placeholder="custom-url-slug" 
-                            value={seo.customUrl}
-                            onChange={(e) => handleSeoChange("customUrl", e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>SEO Title</Label>
-                        <Input 
-                            placeholder="SEO Title" 
-                            value={seo.title}
-                            onChange={(e) => handleSeoChange("title", e.target.value)}
-                        />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label>Meta Keyword</Label>
-                    <Input 
-                        placeholder="keyword1, keyword2" 
-                        value={seo.keyword}
-                        onChange={(e) => handleSeoChange("keyword", e.target.value)}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label>Meta Description</Label>
-                    <Textarea 
-                        placeholder="Meta description..." 
-                        value={seo.description}
-                        onChange={(e) => handleSeoChange("description", e.target.value)}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label>Reference</Label>
-                    <Input 
-                        placeholder="Source reference" 
-                        value={seo.reference}
-                        onChange={(e) => handleSeoChange("reference", e.target.value)}
-                    />
-                </div>
-            </div>
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
 
-            {/* Reporter Section */}
-            <div className="space-y-2">
-                <Label>Content Writer</Label>
-                <Input 
-                    value={reporter || currentUser?.name || currentUser?.fullName || currentUser?.email || "Current User"} // Fallback or rely on parent component mapping the logged-in user to initialData
-                    readOnly
-                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
-                />
-            </div>
-
-            {/* Post Settings */}
-            <div className="space-y-2">
-                <h3 className="text-lg font-medium">Post Settings</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {Object.keys(settings).map((key) => (
-                         <div key={key} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={key} 
-                                checked={settings[key as keyof typeof settings]} 
-                                onCheckedChange={() => handleSettingChange(key as keyof typeof settings)}
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">SEO</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Custom URL</Label>
+                            <Input 
+                                placeholder="custom-slug-here" 
+                                value={seo.customUrl}
+                                onChange={(e) => handleSeoChange("customUrl", e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
                             />
-                            <Label htmlFor={key} className="capitalize">
-                                {key === 'recommended' 
-                                    ? 'Save as Draft' 
-                                    : `${key.replace(/([A-Z])/g, ' $1').trim()}${key === 'social' ? ' Post' : ''}`}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">SEO Title Tag</Label>
+                            <Input 
+                                placeholder="SEO title metadata..." 
+                                value={seo.title}
+                                onChange={(e) => handleSeoChange("title", e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Meta keywords</Label>
+                            <Input 
+                                placeholder="keywords separated by commas" 
+                                value={seo.keyword}
+                                onChange={(e) => handleSeoChange("keyword", e.target.value)}
+                                className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Meta description</Label>
+                        <Textarea 
+                            placeholder="Write a short search description snippet..." 
+                            value={seo.description}
+                            onChange={(e) => handleSeoChange("description", e.target.value)}
+                            className="bg-transparent border-zinc-200 dark:border-zinc-800 min-h-[80px]"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Reference / credits</Label>
+                        <Input 
+                            placeholder="Citations or reference source links..." 
+                            value={seo.reference}
+                            onChange={(e) => handleSeoChange("reference", e.target.value)}
+                            className="bg-transparent border-zinc-200 dark:border-zinc-800"
+                        />
+                    </div>
+                </div>
+
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+
+                <div className="space-y-6">
+                    
+                    <div className="space-y-1.5 max-w-sm">
+                        <Label className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Content writer</Label>
+                        <Input 
+                            value={reporter || currentUser?.name || currentUser?.fullName || currentUser?.email || "Current User"} 
+                            readOnly
+                            className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-550 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 cursor-not-allowed"
+                        />
+                    </div>
+                </div>
+
+                <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
+
+                <div className="space-y-6">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Post Settings</h3>
+                    
+                    <div className="flex flex-wrap gap-6 items-center">
+                        {/* Publish story */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="publish" 
+                                checked={settings.publish} 
+                                onCheckedChange={() => handleSettingChange("publish")}
+                                className="border-zinc-400 dark:border-zinc-650 bg-white dark:bg-transparent data-[state=checked]:bg-transparent dark:data-[state=checked]:bg-white data-[state=checked]:border-zinc-400 dark:data-[state=checked]:border-white data-[state=checked]:text-zinc-950 dark:data-[state=checked]:text-black"
+                            />
+                            <Label htmlFor="publish" className="text-sm font-medium cursor-pointer text-zinc-800 dark:text-zinc-200">
+                                Publish
                             </Label>
                         </div>
-                    ))}
+
+                        {/* Latest update */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="latest" 
+                                checked={settings.latest} 
+                                onCheckedChange={() => handleSettingChange("latest")}
+                                className="border-zinc-400 dark:border-zinc-650 bg-white dark:bg-transparent data-[state=checked]:bg-transparent dark:data-[state=checked]:bg-white data-[state=checked]:border-zinc-400 dark:data-[state=checked]:border-white data-[state=checked]:text-zinc-955 dark:data-[state=checked]:text-black"
+                            />
+                            <Label htmlFor="latest" className="text-sm font-medium cursor-pointer text-zinc-800 dark:text-zinc-200">
+                                Latest
+                            </Label>
+                        </div>
+
+                        {/* Trending story */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="trending" 
+                                checked={settings.trending} 
+                                onCheckedChange={() => handleSettingChange("trending")}
+                                className="border-zinc-400 dark:border-zinc-650 bg-white dark:bg-transparent data-[state=checked]:bg-transparent dark:data-[state=checked]:bg-white data-[state=checked]:border-zinc-400 dark:data-[state=checked]:border-white data-[state=checked]:text-zinc-955 dark:data-[state=checked]:text-black"
+                            />
+                            <Label htmlFor="trending" className="text-sm font-medium cursor-pointer text-zinc-800 dark:text-zinc-200">
+                                Trending
+                            </Label>
+                        </div>
+
+                        {/* Draft backup */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox 
+                                id="recommended" 
+                                checked={settings.recommended} 
+                                onCheckedChange={() => handleSettingChange("recommended")}
+                                className="border-zinc-400 dark:border-zinc-650 bg-white dark:bg-transparent data-[state=checked]:bg-transparent dark:data-[state=checked]:bg-white data-[state=checked]:border-zinc-400 dark:data-[state=checked]:border-white data-[state=checked]:text-zinc-955 dark:data-[state=checked]:text-black"
+                            />
+                            <Label htmlFor="recommended" className="text-sm font-medium cursor-pointer text-zinc-800 dark:text-zinc-200">
+                                Save As Draft
+                            </Label>
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-4 pt-4 pb-10">
+            {/* Bottom Actions Row (Horizontal alignment) */}
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-8 mt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <Link href="/post/list" className="w-full sm:w-auto">
-                    <Button variant="outline" size="lg" className="w-full">Cancel</Button>
+                    <Button variant="outline" className="w-full border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                        Cancel
+                    </Button>
                 </Link>
-                <Button size="lg" onClick={handleSubmit} disabled={isSaving} className="w-full sm:w-auto">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {isSaving ? "Saving..." : (isEditing ? "Update Post" : "Save Post")}
+                <Button 
+                    onClick={handleSubmit} 
+                    disabled={isSaving} 
+                    className="w-full sm:w-auto bg-zinc-950 text-zinc-50 hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-955 dark:hover:bg-zinc-200 font-semibold px-8 shadow-sm flex items-center justify-center gap-2"
+                >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {isSaving ? "Saving Post..." : (isEditing ? "Update Post" : "Save Post")}
                 </Button>
             </div>
         </div>
