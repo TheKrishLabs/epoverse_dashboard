@@ -243,41 +243,60 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                 className="ck5-wordcount"
             />
 
-            {/* Scoped styles – no jsx pragma needed, just a plain style tag */}
+            {/* Premium distraction-free monochromatic style configuration */}
             <style>{`
                 /* ── Wrapper border ─────────────────────────────── */
                 .ck5-wrapper {
-                    border: 1px solid #cbd5e1;
-                    border-radius: 6px;
+                    border: 1px solid #e4e4e7;
+                    border-radius: 8px;
                     overflow: hidden;
-                    background: #fff;
+                    background: #ffffff;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+                .ck5-wrapper:focus-within {
+                    border-color: #09090b;
+                    box-shadow: 0 0 0 1px #09090b;
                 }
 
                 /* ── Toolbar ────────────────────────────────────── */
                 .ck5-wrapper .ck.ck-toolbar {
                     border: none !important;
-                    border-bottom: 1px solid #e2e8f0 !important;
+                    border-bottom: 1px solid #f4f4f5 !important;
                     border-radius: 0 !important;
-                    background: #f8fafc !important;
-                    padding: 4px 6px !important;
+                    background: #fafafa !important;
+                    padding: 6px 8px !important;
                     flex-wrap: wrap !important;
-                    gap: 2px;
+                    gap: 3px;
                 }
                 .ck5-wrapper .ck.ck-toolbar .ck.ck-toolbar__items {
                     flex-wrap: wrap !important;
-                    row-gap: 2px;
+                    row-gap: 3px;
+                }
+                .ck5-wrapper .ck.ck-button {
+                    border-radius: 6px !important;
+                    color: #27272a !important;
+                    transition: background 0.15s, color 0.15s !important;
+                }
+                .ck5-wrapper .ck.ck-button:hover {
+                    background: #f4f4f5 !important;
+                }
+                .ck5-wrapper .ck.ck-button.ck-on {
+                    background: #e4e4e7 !important;
+                    color: #09090b !important;
                 }
 
                 /* ── Editing area ───────────────────────────────── */
                 .ck5-wrapper .ck.ck-editor__main > .ck-editor__editable {
-                    min-height: 350px;
-                    max-height: 700px;
+                    min-height: 420px;
+                    max-height: 800px;
                     border: none !important;
                     box-shadow: none !important;
-                    background: #fff !important;
-                    padding: 16px 20px !important;
-                    font-size: 14px;
-                    line-height: 1.75;
+                    background: #ffffff !important;
+                    padding: 24px 32px !important;
+                    font-size: 16px;
+                    line-height: 1.8;
+                    font-family: inherit;
+                    color: #18181b;
                 }
                 .ck5-wrapper .ck.ck-content {
                     border: none !important;
@@ -286,27 +305,27 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
 
                 /* ── Source-editing area ────────────────────────── */
                 .ck5-wrapper .ck-source-editing-area > textarea {
-                    min-height: 350px !important;
-                    font-family: 'Courier New', Courier, monospace !important;
-                    font-size: 13px !important;
-                    line-height: 1.5 !important;
-                    padding: 16px !important;
-                    background: #1e1e2e !important;
-                    color: #cdd6f4 !important;
+                    min-height: 420px !important;
+                    font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+                    font-size: 14px !important;
+                    line-height: 1.6 !important;
+                    padding: 24px 32px !important;
+                    background: #09090b !important;
+                    color: #f4f4f5 !important;
                     border: none !important;
                 }
 
                 /* ── Word-count bar ─────────────────────────────── */
                 .ck5-wordcount {
-                    background: #f8fafc;
-                    border-top: 1px solid #e2e8f0;
-                    padding: 3px 12px;
-                    font-size: 11px;
-                    color: #64748b;
+                    background: #fafafa;
+                    border-top: 1px solid #f4f4f5;
+                    padding: 4px 16px;
+                    font-size: 12px;
+                    color: #71717a;
                     display: flex;
                     justify-content: flex-end;
                     gap: 16px;
-                    min-height: 24px;
+                    min-height: 28px;
                 }
                 .ck5-wordcount .ck-word-count {
                     display: flex;
@@ -356,67 +375,68 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                     z-index: 10000 !important;
                 }
 
-                /* ── Content styles ─────────────────────────────── */
+                /* ── Content styles (Strictly Monochromatic) ────── */
                 .ck5-wrapper .ck-content table {
                     border-collapse: collapse;
                     width: 100%;
-                    margin: 1em 0;
+                    margin: 1.5em 0;
                 }
                 .ck5-wrapper .ck-content table td,
                 .ck5-wrapper .ck-content table th {
-                    border: 1px solid #cbd5e1;
-                    padding: 6px 10px;
+                    border: 1px solid #e4e4e7;
+                    padding: 8px 12px;
                     vertical-align: top;
                 }
                 .ck5-wrapper .ck-content table th {
-                    background: #f1f5f9;
+                    background: #f4f4f5;
                     font-weight: 600;
+                    color: #09090b;
                 }
                 .ck5-wrapper .ck-content blockquote {
-                    border-left: 4px solid #6366f1;
-                    padding: 0.5em 1em;
-                    margin: 1em 0;
-                    background: #f5f3ff;
-                    color: #4c1d95;
+                    border-left: 3px solid #09090b;
+                    padding: 0.75em 1.25em;
+                    margin: 1.5em 0;
+                    background: #fafafa;
+                    color: #27272a;
                     font-style: italic;
                 }
                 .ck5-wrapper .ck-content pre {
-                    background: #1e1e2e;
-                    color: #cdd6f4;
-                    padding: 1em;
-                    border-radius: 4px;
+                    background: #09090b;
+                    color: #f4f4f5;
+                    padding: 1.25em;
+                    border-radius: 6px;
                     overflow-x: auto;
-                    font-family: 'Courier New', monospace;
-                    font-size: 13px;
+                    font-family: Menlo, Monaco, Consolas, monospace;
+                    font-size: 14px;
                 }
                 .ck5-wrapper .ck-content .image {
-                    margin: 1em auto;
+                    margin: 1.5em auto;
                     text-align: center;
                 }
                 .ck5-wrapper .ck-content .image img {
                     max-width: 100%;
                     height: auto;
-                    border-radius: 4px;
+                    border-radius: 8px;
                 }
 
                 /* ── Loading skeleton ───────────────────────────── */
                 .ck-editor-loading {
-                    border: 1px solid #e2e8f0;
-                    border-radius: 6px;
+                    border: 1px solid #e4e4e7;
+                    border-radius: 12px;
                     overflow: hidden;
                 }
                 .ck-editor-loading__toolbar {
-                    height: 42px;
-                    background: #f8fafc;
-                    border-bottom: 1px solid #e2e8f0;
+                    height: 44px;
+                    background: #fafafa;
+                    border-bottom: 1px solid #f4f4f5;
                     animation: ck-pulse 1.4s ease-in-out infinite;
                 }
                 .ck-editor-loading__body {
-                    min-height: 350px;
+                    min-height: 380px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #94a3b8;
+                    color: #a1a1aa;
                     font-size: 14px;
                 }
                 @keyframes ck-pulse {
@@ -424,48 +444,65 @@ const CKEditorComponent = ({ value, onChange, placeholder }: CKEditorComponentPr
                     50% { opacity: 0.5; }
                 }
 
-                /* ── Dark mode ──────────────────────────────────── */
+                /* ── Dark mode (Strictly Monochromatic) ─────────── */
                 .dark .ck5-wrapper {
-                    border-color: #334155;
-                    background: #0f172a;
+                    border-color: #27272a;
+                    background: #09090b;
+                }
+                .dark .ck5-wrapper:focus-within {
+                    border-color: #f4f4f5;
+                    box-shadow: 0 0 0 1px #f4f4f5;
                 }
                 .dark .ck5-wrapper .ck.ck-toolbar {
-                    background: #1e293b !important;
-                    border-bottom-color: #334155 !important;
+                    background: #18181b !important;
+                    border-bottom-color: #27272a !important;
                 }
                 .dark .ck5-wrapper .ck.ck-button {
-                    color: #cbd5e1 !important;
+                    color: #d4d4d8 !important;
                 }
-                .dark .ck5-wrapper .ck.ck-button:hover,
-                .dark .ck5-wrapper .ck.ck-button:focus {
-                    background: #334155 !important;
+                .dark .ck5-wrapper .ck.ck-button:hover {
+                    background: #27272a !important;
                 }
                 .dark .ck5-wrapper .ck.ck-button.ck-on {
-                    background: #475569 !important;
+                    background: #3f3f46 !important;
+                    color: #ffffff !important;
                 }
                 .dark .ck5-wrapper .ck.ck-editor__main > .ck-editor__editable {
-                    background: #0f172a !important;
-                    color: #e2e8f0 !important;
+                    background: #09090b !important;
+                    color: #f4f4f5 !important;
                 }
                 .dark .ck5-wrapper .ck.ck-dropdown__panel {
-                    background: #1e293b !important;
-                    border-color: #334155 !important;
+                    background: #18181b !important;
+                    border-color: #27272a !important;
                 }
                 .dark .ck5-wrapper .ck-list {
-                    background: #1e293b !important;
+                    background: #18181b !important;
                 }
                 .dark .ck5-wrapper .ck-list__item:hover {
-                    background: #334155 !important;
+                    background: #27272a !important;
                 }
                 .dark .ck5-wrapper .ck-input {
-                    background: #0f172a !important;
-                    color: #e2e8f0 !important;
-                    border-color: #334155 !important;
+                    background: #09090b !important;
+                    color: #f4f4f5 !important;
+                    border-color: #27272a !important;
                 }
                 .dark .ck5-wordcount {
-                    background: #1e293b;
-                    border-top-color: #334155;
-                    color: #94a3b8;
+                    background: #18181b;
+                    border-top-color: #27272a;
+                    color: #a1a1aa;
+                }
+                .dark .ck5-wrapper .ck-content table th {
+                    background: #18181b;
+                    color: #ffffff;
+                }
+                .dark .ck5-wrapper .ck-content table td,
+                .dark .ck5-wrapper .ck-content table th {
+                    border-color: #27272a;
+                }
+                .dark .ck5-wrapper .ck-content blockquote {
+                    border-left-color: #f4f4f5;
+                    background: #18181b;
+                    color: #e4e4e7;
                 }
             `}</style>
         </div>
