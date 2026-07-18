@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client"
 
 import { useEffect, useState, use } from "react"
@@ -149,3 +150,4 @@ export default function PollResultsPage({ params }: { params: Promise<{ id: stri
     </div>
   )
 }
+

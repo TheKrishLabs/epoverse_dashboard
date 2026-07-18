@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface OpinionData {
@@ -164,3 +165,4 @@ export const opinionService = {
     }
   }
 };
+

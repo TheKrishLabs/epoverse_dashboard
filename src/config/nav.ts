@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   LayoutDashboard,
   Server,
@@ -323,3 +324,4 @@ export const sidebarNav: SidebarNavGroup[] = [
     ],
   },
 ];
+

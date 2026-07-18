@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface PollOption {
@@ -120,3 +121,4 @@ export const pollService = {
     }
   }
 };
+

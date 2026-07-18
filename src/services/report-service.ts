@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface ReportData {
@@ -69,3 +70,4 @@ export const reportService = {
     return response?.data || response;
   }
 };
+

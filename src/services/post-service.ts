@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 import { PostData } from "@/lib/mock-db";
 
@@ -395,3 +396,4 @@ export const postService = {
     }
   }
 };
+

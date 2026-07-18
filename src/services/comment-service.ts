@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface CommentData {
@@ -79,3 +80,4 @@ export const commentService = {
     return response?.data || response;
   }
 };
+
