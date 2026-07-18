@@ -341,6 +341,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             if (seo.description) formData.append("metaDescription", seo.description);
             formData.append("isLatest", String(settings.latest));
             formData.append("isTrending", String(settings.trending));
+            formData.append("trending", String(settings.trending));
             
             // Tags and Meta Keywords
             if (keywordList.length > 0) {

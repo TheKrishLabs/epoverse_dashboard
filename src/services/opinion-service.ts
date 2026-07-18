@@ -21,6 +21,7 @@ export interface OpinionData {
     metaDescription?: string;
     isLatest?: boolean;
     status?: string | number | boolean;
+    isPublished?: boolean;
     createdAt?: string;
 }
 
@@ -147,5 +148,19 @@ export const opinionService = {
   deleteOpinion: async (id: string): Promise<boolean> => {
     await api.delete(`/opinions/${id}`);
     return true;
+  },
+
+  updateOpinionPublishStatus: async (id: string, isPublished: boolean): Promise<any> => {
+    try {
+        const response = await api.patch<any>(`/opinions/${id}/publish-status`, { isPublished });
+        console.log("Update Opinion Publish Status Response:", response);
+        const data = response?.data || response?.opinion || response;
+        return data;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return null;
+        }
+        throw error;
+    }
   }
 };

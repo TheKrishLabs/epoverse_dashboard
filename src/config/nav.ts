@@ -84,6 +84,12 @@ export const sidebarNav: SidebarNavGroup[] = [
             icon: FileText,
             variant: "ghost",
           },
+          {
+            title: "Post Reports",
+            href: "/post/reports",
+            icon: FileText,
+            variant: "ghost",
+          },
         ],
       },
       {

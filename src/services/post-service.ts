@@ -34,6 +34,7 @@ export interface Article {
     metaDescription?: string;
     isLatest?: boolean;
     isTrending?: boolean;
+    trending?: boolean;
     status?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -211,6 +212,7 @@ export const postService = {
     metaDescription?: string;
     isLatest?: boolean;
     isTrending?: boolean;
+    trending?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } | FormData): Promise<any> => {
     try {
@@ -272,6 +274,45 @@ export const postService = {
     } catch (error) {
       console.error(`Failed to delete article ${id}:`, error);
       throw error;
+    }
+  },
+
+  getTrendingArticles: async (page: number = 1, limit: number = 10): Promise<Article[]> => {
+    try {
+        const response: any = await api.get('/articles/trending', {
+            params: { page, limit }
+        });
+        
+        let items: Article[] = [];
+        if (Array.isArray(response)) items = response;
+        else if (response && Array.isArray(response.data)) items = response.data;
+        else if (response && Array.isArray(response.articles)) items = response.articles;
+
+        return items;
+    } catch (error) {
+        console.error("Failed to fetch trending articles", error);
+        throw error;
+    }
+  },
+
+  removeTrendingArticle: async (id: string): Promise<boolean> => {
+    try {
+        await api.patch(`/articles/${id}/remove-trending`);
+        return true;
+    } catch (error) {
+        console.error(`Failed to remove trending status for article ${id}`, error);
+        throw error;
+    }
+  },
+
+  updateArticleStatus: async (id: string, status: 'published' | 'unpublished'): Promise<any> => {
+    try {
+        const response: any = await api.patch(`/articles/${id}/status`, { status });
+        const data = response?.data?.article || response?.article || response?.data || response;
+        return data;
+    } catch (error) {
+        console.error(`Failed to update article status for ${id}`, error);
+        throw error;
     }
   },
 

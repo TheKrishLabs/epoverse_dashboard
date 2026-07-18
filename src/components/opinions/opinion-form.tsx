@@ -62,6 +62,7 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
     const [details, setDetails] = useState(initialData?.details || "")
     const [status, setStatus] = useState<string>(initialData?.status as string || "Active")
     const [isLatest, setIsLatest] = useState<boolean>(initialData?.isLatest || false)
+    const [isPublished, setIsPublished] = useState<boolean>(initialData?.isPublished || false)
     
     // Images
     const [photo1Preview, setPhoto1Preview] = useState<string | null>(initialData?.photo1 || null)
@@ -167,6 +168,7 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
                 metaKeywords: keywordsArray,
                 metaDescription,
                 isLatest,
+                isPublished,
                 status
             }
 
@@ -417,6 +419,16 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
                             <Label htmlFor="isLatest" className="cursor-pointer">Mark as Latest Opinion</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 pt-2">
+                            <input 
+                                type="checkbox" 
+                                id="isPublished" 
+                                checked={isPublished} 
+                                onChange={(e) => setIsPublished(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <Label htmlFor="isPublished" className="cursor-pointer">Publish</Label>
                         </div>
                     </div>
                 </div>

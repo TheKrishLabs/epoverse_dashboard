@@ -105,6 +105,30 @@ export function OpinionList() {
     }
   }, [])
 
+  const togglePublish = useCallback(async (opinion: OpinionData) => {
+    const opinionId = opinion.id || opinion._id;
+    if (!opinionId) return;
+    try {
+        const newPublishState = !opinion.isPublished;
+        
+        // Optimistic update
+        setOpinions(current => current.map(op => {
+            if ((op.id || op._id) === opinionId) {
+                return { ...op, isPublished: newPublishState };
+            }
+            return op;
+        }));
+        
+        await opinionService.updateOpinionPublishStatus(opinionId, newPublishState);
+        // We could fetch data, but optimistic update is usually fine here
+        // await fetchData(); 
+    } catch (err) {
+        console.error("Failed to toggle publish status", err);
+        setError("Failed to toggle publish status");
+        await fetchData(); // revert on error
+    }
+  }, [fetchData])
+
   const filteredOpinions = useMemo(() => {
       if (selectedLanguage === "all") return opinions;
       return opinions.filter((op) => op.language === selectedLanguage);
@@ -220,6 +244,44 @@ export function OpinionList() {
                   <Badge className={status === "Active" ? "bg-[#198754] flex items-center justify-center font-semibold text-[11px] px-2.5 py-0.5 rounded-full" : "bg-red-500 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-full"}>
                     {status || "Inactive"}
                   </Badge>
+                </div>
+            )
+        }
+      },
+      {
+        accessorKey: "isPublished",
+        header: ({ column }) => {
+            return (
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                className="px-0 font-bold hover:bg-transparent text-gray-800"
+              >
+                Published
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+              </Button>
+            )
+        },
+        cell: ({ row }) => {
+            const opinion = row.original;
+            const isPublished = !!opinion.isPublished;
+            return (
+                <div className="flex items-center" >
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePublish(opinion);
+                    }}
+                    type="button"
+                    className="flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-sm overflow-hidden"
+                    title={`Toggle Publish (${isPublished ? 'Unpublish' : 'Publish'})`}
+                  >
+                     <div className="flex items-center">
+                        <Badge className={`${isPublished ? "bg-blue-600 flex items-center justify-center font-semibold text-[11px] px-2.5 py-0.5 rounded-full" : "bg-gray-500 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-full"}`}>
+                            {isPublished ? "Published" : "Draft"}
+                        </Badge>
+                     </div>
+                  </button>
                 </div>
             )
         }

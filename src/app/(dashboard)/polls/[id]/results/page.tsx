@@ -16,8 +16,32 @@ export default function PollResultsPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const data = await pollService.getPollById(id)
+        const [data, responseData] = await Promise.all([
+            pollService.getPollById(id),
+            pollService.getPollResponse(id).catch(err => {
+                console.warn("Failed to fetch poll responses separately:", err);
+                return null;
+            })
+        ]);
+        
         if (data) {
+          console.log("Poll Data:", data);
+          console.log("Poll Response Data:", responseData);
+          
+          // Merge response data if available and contains options/votes
+          if (responseData) {
+              const resPayload = responseData.poll || responseData.data || responseData;
+              if (resPayload && resPayload.options && Array.isArray(resPayload.options)) {
+                  // Merge votes from pole-response into the main poll options
+                  data.options = data.options.map(opt => {
+                      const resOpt = resPayload.options.find((ro: any) => ro._id === opt._id || ro.id === opt.id || ro.text === opt.text);
+                      return {
+                          ...opt,
+                          votes: resOpt && typeof resOpt.votes === 'number' ? resOpt.votes : (opt.votes || 0)
+                      };
+                  });
+              }
+          }
           setPoll(data)
         }
       } catch (error) {
