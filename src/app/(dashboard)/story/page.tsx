@@ -137,19 +137,10 @@ export default function StoryManagePage() {
     if (!editItem) return;
     setIsSavingItem(true);
     try {
-        let updates: FormData | { title?: string; buttonText?: string; buttonLink?: string };
+        const updates = new FormData();
+        updates.append("title", editItem.title || "");
         if (editImageFile) {
-            updates = new FormData();
-            updates.append("title", editItem.title || "");
-            updates.append("buttonText", editItem.buttonText || "");
-            updates.append("buttonLink", editItem.buttonLink || "");
-            updates.append("storyImage", editImageFile);
-        } else {
-            updates = {
-                title: editItem.title,
-                buttonText: editItem.buttonText,
-                buttonLink: editItem.buttonLink,
-            };
+            updates.append("images", editImageFile);
         }
 
         const updated = await storyService.updateStory(editItem._id, updates) as unknown as StoryItem;
@@ -399,15 +390,16 @@ export default function StoryManagePage() {
                                             >
                                                 <Eye className="h-4 w-4" />
                                             </Button>
-                                            <Link href={`/story/edit/${story.id}`}>
-                                                <Button 
-                                                    size="icon" 
-                                                    variant="ghost" 
-                                                    className="h-8 w-8 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 rounded-md dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
-                                                >
+                                            <Button 
+                                                asChild
+                                                size="icon" 
+                                                variant="ghost" 
+                                                className="h-8 w-8 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 rounded-md dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                                            >
+                                                <Link href={`/story/edit/${story.id}`}>
                                                     <Edit className="h-4 w-4" />
-                                                </Button>
-                                            </Link>
+                                                </Link>
+                                            </Button>
                                             <Button 
                                                 size="icon" 
                                                 variant="ghost" 

@@ -14,7 +14,7 @@ const axiosInstance: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds timeout (to handle Render free tier cold starts)
+  timeout: 120000, // 120 seconds timeout (to handle Render free tier cold starts)
 });
 
 // Request Interceptor
@@ -35,9 +35,9 @@ axiosInstance.interceptors.request.use(
       }
     }
     
-    // Let browser automatically set Content-Type with boundary for FormData
+    // For Axios 1.x, setting it to multipart/form-data allows it to correctly append the boundary
     if (config.data instanceof FormData && config.headers) {
-      delete config.headers['Content-Type'];
+      config.headers['Content-Type'] = 'multipart/form-data';
     }
     
     return config;

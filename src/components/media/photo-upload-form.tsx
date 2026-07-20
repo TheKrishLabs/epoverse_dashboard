@@ -1,301 +1,250 @@
+/* eslint-disable */
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, X, ImageIcon, VideoIcon } from "lucide-react";
-
+import { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { Loader2, X, UploadCloud, ImageIcon, VideoIcon, CheckCircle, AlertCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { mediaService } from "@/services/media-service";
-
-const formSchema = z.object({
-  thumbHeight: z.string().min(1, "Height is required"),
-  thumbWidth: z.string().min(1, "Width is required"),
-  largeHeight: z.string().min(1, "Height is required"),
-  largeWidth: z.string().min(1, "Width is required"),
-  caption: z.string().optional(),
-  reference: z.string().optional(),
-});
 
 interface PhotoUploadFormProps {
   onUploadSuccess?: () => void;
 }
 
-export function PhotoUploadForm({ onUploadSuccess }: PhotoUploadFormProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [previewType, setPreviewType] = useState<'image' | 'video' | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface FileWithMeta {
+  file: File;
+  preview: string;
+  type: 'image' | 'video';
+  id: string;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
+  width?: number;
+  height?: number;
+}
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      thumbHeight: "240",
-      thumbWidth: "438",
-      largeHeight: "585",
-      largeWidth: "1067",
-      caption: "",
-      reference: "",
+export function PhotoUploadForm({ onUploadSuccess }: PhotoUploadFormProps) {
+  const [files, setFiles] = useState<FileWithMeta[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+    // Handle rejected files
+    if (rejectedFiles.length > 0) {
+      const errors = rejectedFiles.map(r => `${r.file.name}: ${r.errors.map((e: any) => e.message).join(', ')}`);
+      alert(`Some files were rejected:\n${errors.join('\n')}`);
+    }
+
+    const newFiles = acceptedFiles.map(file => {
+      const isVideo = file.type.startsWith('video/');
+      return {
+        file,
+        preview: URL.createObjectURL(file),
+        type: isVideo ? 'video' : 'image',
+        id: Math.random().toString(36).substring(7),
+        status: 'pending',
+        progress: 0,
+      } as FileWithMeta;
+    });
+
+    setFiles(prev => [...prev, ...newFiles]);
+
+    // Extract dimensions
+    newFiles.forEach(fileMeta => {
+        if (fileMeta.type === 'image') {
+            const img = new Image();
+            img.onload = () => {
+                setFiles(prev => prev.map(f => f.id === fileMeta.id ? { ...f, width: img.width, height: img.height } : f));
+            };
+            img.src = fileMeta.preview;
+        } else if (fileMeta.type === 'video') {
+            const video = document.createElement('video');
+            video.onloadedmetadata = () => {
+                setFiles(prev => prev.map(f => f.id === fileMeta.id ? { ...f, width: video.videoWidth, height: video.videoHeight } : f));
+            };
+            video.src = fileMeta.preview;
+        }
+    });
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.gif'],
+      'video/*': ['.mp4', '.webm', '.ogg']
     },
+    maxSize: 50 * 1024 * 1024, // 50MB max, will validate image vs video size in upload logic if needed
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      const isVideo = selectedFile.type.startsWith('video/');
-      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024; // 50MB for video, 5MB for img
-
-      if (selectedFile.size > maxSize) {
-        alert(`File size must be less than ${isVideo ? '50MB' : '5MB'}`);
-        return;
-      }
-      setFile(selectedFile);
-      setPreviewType(isVideo ? 'video' : 'image');
-      
-      const URL = window.URL || window.webkitURL;
-      setPreview(URL.createObjectURL(selectedFile));
-    }
+  const removeFile = (id: string) => {
+    setFiles(prev => {
+      const updated = prev.filter(f => f.id !== id);
+      const removed = prev.find(f => f.id === id);
+      if (removed?.preview) URL.revokeObjectURL(removed.preview);
+      return updated;
+    });
   };
 
-  const clearFile = () => {
-    setFile(null);
-    if (preview) {
-        URL.revokeObjectURL(preview);
-    }
-    setPreview(null);
-    setPreviewType(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const clearAll = () => {
+    files.forEach(f => {
+      if (f.preview) URL.revokeObjectURL(f.preview);
+    });
+    setFiles([]);
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!file) {
-      alert("Please select an image");
-      return;
-    }
+  const handleUpload = async () => {
+    const pendingFiles = files.filter(f => f.status === 'pending' || f.status === 'error');
+    if (pendingFiles.length === 0) return;
 
     setIsUploading(true);
-    try {
-      const formData = new FormData();
-      // The backend explicitly requests the key "file" for both images and videos
-      formData.append("file", file); 
-      formData.append("thumbHeight", values.thumbHeight);
-      formData.append("thumbWidth", values.thumbWidth);
-      formData.append("largeHeight", values.largeHeight);
-      formData.append("largeWidth", values.largeWidth);
-      if (values.caption) formData.append("caption", values.caption);
-      if (values.reference) formData.append("reference", values.reference);
 
-      await mediaService.uploadPhoto(formData);
-      alert("Media uploaded successfully!");
-      
-      // Reset form
-      form.reset();
-      clearFile();
-      onUploadSuccess?.();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error(error);
-      const msg = error?.response?.data?.message || error?.message || "Failed to upload media.";
-      alert(msg);
-    } finally {
-      setIsUploading(false);
+    for (let i = 0; i < pendingFiles.length; i++) {
+      const currentFile = pendingFiles[i];
+
+      // File specific validation
+      const maxSize = currentFile.type === 'video' ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (currentFile.file.size > maxSize) {
+         setFiles(prev => prev.map(f => f.id === currentFile.id ? { ...f, status: 'error', error: `Size exceeds ${currentFile.type === 'video' ? '50MB' : '5MB'} limit` } : f));
+         continue;
+      }
+
+      setFiles(prev => prev.map(f => f.id === currentFile.id ? { ...f, status: 'uploading' } : f));
+
+      try {
+        const formData = new FormData();
+        formData.append("files", currentFile.file);
+        
+        // Use real dimensions or fallback to defaults
+        formData.append("thumbHeight", currentFile.height?.toString() || "240");
+        formData.append("thumbWidth", currentFile.width?.toString() || "438");
+        formData.append("largeHeight", currentFile.height?.toString() || "585");
+        formData.append("largeWidth", currentFile.width?.toString() || "1067");
+
+        await mediaService.uploadPhoto(formData, (progressEvent: any) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setFiles(prev => prev.map(f => f.id === currentFile.id ? { ...f, progress: percentCompleted } : f));
+          }
+        });
+
+        setFiles(prev => prev.map(f => f.id === currentFile.id ? { ...f, status: 'success', progress: 100 } : f));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error("Upload failed for", currentFile.file.name, err);
+        setFiles(prev => prev.map(f => f.id === currentFile.id ? { ...f, status: 'error', error: err?.response?.data?.message || err.message || 'Upload failed' } : f));
+      }
     }
+
+    setIsUploading(false);
+    onUploadSuccess?.();
   };
 
   return (
     <div className="bg-card rounded-lg border shadow-sm p-6">
       <div className="mb-6">
         <h2 className="text-lg font-semibold mb-1">Upload Media</h2>
-        <p className="text-sm text-muted-foreground">Upload and configure your image or video details.</p>
+        <p className="text-sm text-muted-foreground">Drag and drop multiple images or videos here.</p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* Thumb Image Size */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Thumb Image Size</h3>
-              <FormField
-                control={form.control}
-                name="thumbHeight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (Y) <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="thumbWidth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Width (X) <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      <div 
+        {...getRootProps()} 
+        className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[250px]
+          ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'}`}
+      >
+        <input {...getInputProps()} />
+        <UploadCloud className={`h-12 w-12 mb-4 ${isDragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+        <h3 className="text-lg font-medium mb-2">
+          {isDragActive ? "Drop files here..." : "Drag & drop files here"}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">or click to select files</p>
+        <div className="flex gap-4 text-xs text-muted-foreground/75 font-medium">
+            <span>Images up to 5MB</span>
+            <span>•</span>
+            <span>Videos up to 50MB</span>
+        </div>
+      </div>
 
-            {/* Large Image Size */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Large Image Size</h3>
-              <FormField
-                control={form.control}
-                name="largeHeight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (Y) <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="largeWidth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Width (X) <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      {files.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium">Selected Files ({files.length})</h3>
+              <Button variant="ghost" size="sm" onClick={clearAll} disabled={isUploading} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                  Clear All
+              </Button>
           </div>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            {files.map((fileMeta) => (
+              <div key={fileMeta.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card relative overflow-hidden group">
+                  {/* Background Progress */}
+                  {fileMeta.status === 'uploading' && (
+                     <div 
+                        className="absolute inset-0 bg-primary/5 transition-all duration-300"
+                        style={{ width: `${fileMeta.progress}%` }}
+                     />
+                  )}
+                  
+                  {/* Thumbnail */}
+                  <div className="h-14 w-14 shrink-0 rounded bg-muted overflow-hidden relative flex items-center justify-center z-10 border">
+                    {fileMeta.type === 'video' ? (
+                        <video src={fileMeta.preview} className="h-full w-full object-cover" />
+                    ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={fileMeta.preview} alt={fileMeta.file.name} className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 z-10">
+                      <p className="text-sm font-medium truncate" title={fileMeta.file.name}>{fileMeta.file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(fileMeta.file.size / (1024 * 1024)).toFixed(2)} MB
+                        {fileMeta.width && fileMeta.height && ` • ${fileMeta.width}x${fileMeta.height}`}
+                      </p>
+                      
+                      {fileMeta.status === 'error' && (
+                          <p className="text-xs text-destructive mt-1 flex items-center"><AlertCircle className="h-3 w-3 mr-1" /> {fileMeta.error}</p>
+                      )}
+                      
+                      {fileMeta.status === 'uploading' && (
+                          <div className="mt-2 flex items-center gap-2">
+                              <Progress value={fileMeta.progress} className="h-1.5" />
+                              <span className="text-[10px] font-medium text-muted-foreground w-8">{fileMeta.progress}%</span>
+                          </div>
+                      )}
+                  </div>
 
-          <div className="grid gap-8 md:grid-cols-2">
-             {/* File Upload */}
-            <div className="space-y-4">
-                 <FormLabel className="block">Media File <span className="text-red-500">*</span></FormLabel>
-                 <div className="flex gap-2">
-                     <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                     >
-                        Browse...
-                     </Button>
-                     <Input
-                        readOnly
-                        value={file ? file.name : "No file selected."}
-                        className="flex-1 cursor-default focus-visible:ring-0"
-                     />
-                     <input
-                        type="file"
-                        className="hidden"
-                        ref={fileInputRef}
-                        accept="image/*,video/*"
-                        onChange={handleFileChange}
-                     />
-                 </div>
-                 <p className="text-xs text-yellow-600 font-medium">* Image Max 5 MB | Video Max 50 MB</p>
-                 
-                 {preview && (
-                    <div className="relative mt-4 aspect-video w-full max-w-sm rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
-                        {previewType === 'video' ? (
-                            <video src={preview} controls className="w-full h-full object-contain" />
-                        ) : (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={preview} alt="Preview" className="w-full h-full object-contain" />
-                        )}
-                        <Button
-                            type="button"
-                            variant="destructive"
+                  {/* Actions / Status */}
+                  <div className="shrink-0 z-10 flex items-center">
+                      {fileMeta.status === 'success' ? (
+                          <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      ) : (
+                          <Button
+                            variant="ghost"
                             size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={clearFile}
-                        >
+                            disabled={isUploading && fileMeta.status === 'uploading'}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeFile(fileMeta.id)}
+                          >
                             <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                 )}
-                 {!preview && (
-                     <div className="mt-4 aspect-video w-full max-w-sm rounded-lg border border-dashed flex items-center justify-center bg-muted/30">
-                         <div className="flex flex-col items-center text-muted-foreground">
-                             <div className="flex gap-2 mb-2 opacity-50">
-                                <ImageIcon className="h-8 w-8" />
-                                <VideoIcon className="h-8 w-8" />
-                             </div>
-                             <span className="text-xs">Media Preview</span>
-                         </div>
-                     </div>
-                 )}
-            </div>
+                          </Button>
+                      )}
+                  </div>
+              </div>
+            ))}
           </div>
-
-          <div className="grid gap-8 md:grid-cols-2">
-             <FormField
-                control={form.control}
-                name="caption"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Caption</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter Caption" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="reference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reference</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter Reference" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-          </div>
-
-          <div className="flex items-center gap-4 pt-4">
+          
+          <div className="mt-6 flex justify-end">
              <Button 
-                type="button" 
-                variant="destructive" 
-                size="icon"
-                onClick={() => {
-                    form.reset();
-                    clearFile();
-                }}
+                onClick={handleUpload} 
+                disabled={isUploading || !files.some(f => f.status === 'pending' || f.status === 'error')}
+                className="w-full sm:w-auto"
              >
-                <X className="h-4 w-4" />
-             </Button>
-             <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white" disabled={isUploading}>
-               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-               {isUploading ? "Uploading..." : "Upload Media"}
+                 {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                 {isUploading ? "Uploading..." : `Upload ${files.filter(f => f.status === 'pending' || f.status === 'error').length} Files`}
              </Button>
           </div>
-        </form>
-      </Form>
+        </div>
+      )}
     </div>
   );
 }

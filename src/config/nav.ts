@@ -176,12 +176,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         icon: BrainCircuit,
         variant: "ghost",
       },
-      {
-        title: "Menu",
-        href: "/menus",
-        icon: Gift,
-        variant: "ghost",
-      },
+
       // {
       //   title: "Reporter",
       //   href: "/reporter",
