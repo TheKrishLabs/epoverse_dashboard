@@ -135,20 +135,9 @@ export function PhotoList() {
     alert("URL copied to clipboard!");
   }
 
-  const handleViewDetails = async (id: string) => {
-    setSelectedPhotoId(id);
-    setIsLoadingDetails(true);
-    setDetailedPhoto(null);
-    try {
-        const photo = await mediaService.getPhotoById(id);
-        setDetailedPhoto(photo);
-    } catch (err) {
-        console.error("Failed to load photo details", err);
-        alert("Failed to fetch image details.");
-        setSelectedPhotoId(null);
-    } finally {
-        setIsLoadingDetails(false);
-    }
+  const handleViewDetails = (photo: Photo) => {
+    setSelectedPhotoId(photo._id);
+    setDetailedPhoto(photo);
   };
 
   const closeDetails = () => {
@@ -228,64 +217,64 @@ export function PhotoList() {
           {filteredAndSortedPhotos.map((photo) => {
             const isDeleted = photo.status === 'Deleted';
             return (
-            <Card key={photo._id} className="overflow-hidden group relative flex flex-col hover:shadow-md transition-shadow">
+            <Card key={photo._id} className="overflow-hidden rounded-2xl group relative flex flex-col hover:shadow-xl transition-all duration-300 border-border/40 hover:border-primary/30 bg-card p-2">
                <div 
-                   className={`relative aspect-square bg-muted overflow-hidden transition-opacity cursor-pointer ${isDeleted ? 'opacity-60 grayscale' : ''}`}
-                   onClick={() => handleViewDetails(photo._id)}
+                   className={`relative aspect-square bg-muted/30 overflow-hidden rounded-xl transition-all duration-300 cursor-pointer ${isDeleted ? 'opacity-60 grayscale' : ''}`}
+                   onClick={() => handleViewDetails(photo)}
                >
                  {/* eslint-disable-next-line @next/next/no-img-element */}
                  <img 
                    src={photo.thumbnailUrl || photo.url} 
                    alt={photo.caption || "Photo"} 
-                   className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                   className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
                    loading="lazy"
                  />
   
                  {isDeleted && (
                      <div className="absolute top-2 left-2 pointer-events-none">
-                         <Badge variant="destructive" className="shadow-sm">DELETED</Badge>
+                         <Badge variant="destructive" className="shadow-sm font-semibold tracking-wide text-[10px]">DELETED</Badge>
                      </div>
                  )}
                  
-                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3">
                     <Button 
                         variant="secondary" 
                         size="icon" 
-                        className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/40 text-white border-0"
-                        onClick={(e) => { e.stopPropagation(); handleViewDetails(photo._id); }}
+                        className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/50 text-white border-0 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+                        onClick={(e) => { e.stopPropagation(); handleViewDetails(photo); }}
                     >
                         <Eye className="h-5 w-5" />
                     </Button>
                     <Button 
                         variant="secondary" 
                         size="icon" 
-                        className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/40 text-white border-0"
+                        className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/50 text-white border-0 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
                         onClick={(e) => { e.stopPropagation(); copyToClipboard(photo.url); }}
                     >
                         <Copy className="h-5 w-5" />
                     </Button>
                  </div>
                </div>
-              <CardContent className="p-3 flex-1 flex flex-col justify-between">
+              <CardContent className="p-3 pb-1 flex-1 flex flex-col justify-between">
                  <div>
-                   <p className="text-sm font-medium line-clamp-1 mb-1" title={photo.caption || photo.url.split('/').pop()}>
+                   <p className="text-sm font-semibold line-clamp-1 mb-1 text-foreground/90 group-hover:text-primary transition-colors" title={photo.caption || photo.url.split('/').pop()}>
                      {photo.caption || photo.url.split('/').pop()}
                    </p>
                    {photo.dimensions?.large?.width && photo.dimensions?.large?.height && (
-                     <p className="text-[10px] text-muted-foreground truncate" title={photo.url}>
-                       {photo.dimensions.large.width}x{photo.dimensions.large.height}
+                     <p className="text-[11px] text-muted-foreground/70 truncate font-medium" title={photo.url}>
+                       {photo.dimensions.large.width} × {photo.dimensions.large.height}
                      </p>
                    )}
                  </div>
               </CardContent>
-              <CardFooter className="p-3 pt-0 flex justify-between items-center border-t bg-muted/10 mt-auto">
-                  <span className="text-[10px] text-muted-foreground font-medium">
+              <CardFooter className="p-3 pt-2 flex justify-between items-center mt-auto">
+                  <span className="text-[11px] text-muted-foreground/60 font-medium">
                       {format(new Date(photo.createdAt || Date.now()), 'MMM d, yyyy')}
                   </span>
                   <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                       onClick={() => setPhotoToToggle(photo)}
                       title="Permanently Delete Photo"
                   >

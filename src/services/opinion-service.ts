@@ -3,16 +3,15 @@ import api from "@/lib/axios";
 
 export interface OpinionData {
     id?: string;
-    // Mongo often uses _id
+    
     _id?: string;
-    // language can be the string ID or a populated object from the API
+    
     language: string | { _id: string; name: string };
     name: string;
     designation?: string;
     headline: string;
     slug: string;
     details?: string;
-    // Some implementations keep customUrl for backwards compatibility or routing
     customUrl?: string; 
     photo1?: string | null;
     photo2?: string | null;
@@ -48,22 +47,17 @@ export const opinionService = {
         const response = await api.get<any>('/opinions', { params });
         console.log("Raw Opinion Response:", response);
         
-        // Handle various backend response wrappers safely
         const payload = response?.data ? response.data : response;
 
-        // If it's already the expected object structure, return it
         if (payload && Array.isArray(payload.data)) {
             return payload as OpinionResponse;
         }
 
-        // If it's just an array, wrap it
         if (Array.isArray(payload)) {
             return { data: payload, total: payload.length, page: 1, limit: payload.length };
         }
         
-        // Fallback: If it's an object with various possible keys, find the first array
         if (typeof payload === 'object' && payload !== null) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payloadObj = payload as any;
             if (payloadObj.opinions && Array.isArray(payloadObj.opinions)) {
                 return { data: payloadObj.opinions, total: payloadObj.opinions.length, page: 1, limit: payloadObj.total || payloadObj.opinions.length };
@@ -103,7 +97,6 @@ export const opinionService = {
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response = await api.get<any>(`/opinions/${id}`);
-        // Handle wrappers like { success: true, data: { ... }, opinion: { ... } }
         const data = response?.data || response?.opinion || response;
         
         if (data && typeof data === 'object' && (data._id || data.id || data.headline)) {
@@ -163,6 +156,21 @@ export const opinionService = {
         }
         throw error;
     }
+  },
+
+  updateOpinionStatus: async (id: string, status: string | boolean | number): Promise<any> => {
+    try {
+        const response = await api.patch<any>(`/opinions/${id}/status`, { status });
+        console.log("Update Opinion Status Response:", response);
+        const data = response?.data || response?.opinion || response;
+        return data;
+    } catch (error: any) {
+        // Fallback to PUT if PATCH /status is not available
+        if (error.response && error.response.status === 404) {
+            console.warn("PATCH /status not found, falling back to PUT");
+            return await api.put<any>(`/opinions/${id}`, { status });
+        }
+        throw error;
+    }
   }
 };
-

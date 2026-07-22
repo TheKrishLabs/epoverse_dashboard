@@ -45,7 +45,7 @@ export function LatestArticles() {
   }, []);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full rounded-2xl shadow-sm border-none bg-white/80 dark:bg-slate-900/50 backdrop-blur-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div className="flex flex-col gap-1">
           <CardTitle>Latest Articles</CardTitle>

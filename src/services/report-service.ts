@@ -53,7 +53,7 @@ export const reportService = {
   },
 
   unreportArticle: async (id: string): Promise<any> => {
-    const response = await api.patch<any>(`/reports/${id}/unreports`);
+    const response = await api.patch<any>(`/reports/${id}/unreport`);
     return response?.data || response;
   },
 

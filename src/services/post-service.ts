@@ -288,6 +288,7 @@ export const postService = {
         if (Array.isArray(response)) items = response;
         else if (response && Array.isArray(response.data)) items = response.data;
         else if (response && Array.isArray(response.articles)) items = response.articles;
+        else if (response && response.data && Array.isArray(response.data.articles)) items = response.data.articles;
 
         return items;
     } catch (error) {

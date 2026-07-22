@@ -10,7 +10,9 @@ import {
   ChevronRight,
   X,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Pencil,
+  Eye
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,12 +48,45 @@ export default function ArticleReportsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ReportData | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const loadReports = async () => {
     setIsLoading(true);
     try {
       const data = await reportService.fetchReports();
-      setReports(data);
+      
+      const reportsWithTitles = await Promise.all(data.map(async (report) => {
+          let title = report.article?.title || report.article?.headline || report.article?.name;
+          
+          const articleIdRaw =report.article;
+          const articleIdStr = typeof articleIdRaw === 'object' ? (articleIdRaw._id || articleIdRaw.id) : articleIdRaw;
+          
+          if (!title && articleIdStr && typeof articleIdStr === 'string') {
+             try {
+                const { postService } = await import("@/services/post-service");
+                const article = await postService.getArticleById(articleIdStr);
+                if (article) {
+                    title = article.headline || article.title;
+                } else {
+                    const post = await postService.getPostById(articleIdStr);
+                    if (post) {
+                        title = post.title;
+                    }
+                }
+             } catch (e) {
+                console.error("Failed to fetch article for report:", articleIdStr);
+             }
+          }
+          
+          if (title) {
+             return { ...report, articleTitle: title };
+          }
+          return report;
+      }));
+      
+      setReports(reportsWithTitles);
     } catch (error) {
       setErrorMessage("Failed to load article reports.");
     } finally {
@@ -66,10 +101,11 @@ export default function ArticleReportsPage() {
   // Filter Logic
   const filteredReports = reports.filter(report => {
     const searchLower = searchQuery.toLowerCase();
-    const articleTitle = report.article?.title || report.article?.name || "";
+    const articleTitle = (report as any).articleTitle || report.article?.title || report.article?.name || "";
+    const desc = report.description || (report as any).message || (report as any).details || (report as any).text || (report as any).reportedMessages || "";
     return (
       (report.reason || "").toLowerCase().includes(searchLower) ||
-      (report.description || "").toLowerCase().includes(searchLower) ||
+      desc.toLowerCase().includes(searchLower) ||
       articleTitle.toLowerCase().includes(searchLower)
     );
   });
@@ -85,17 +121,78 @@ export default function ArticleReportsPage() {
     }
   };
 
-  // Actions
-  const handleUnreport = async (id: string) => {
+  const handleUnreportToggle = async (id: string, currentlyReported: boolean) => {
     try {
+      // Toggle logic in frontend
+      setReports(prev => prev.map(r => {
+        if (r._id === id || r.id === id) {
+          return {
+            ...r,
+            article: {
+              ...(r.article || {}),
+              isReported: !currentlyReported
+            }
+          };
+        }
+        return r;
+      }));
+      
+      // Update the selected report if it's currently open in the edit modal
+      if (selectedReport && (selectedReport._id === id || selectedReport.id === id)) {
+         setSelectedReport({
+            ...selectedReport,
+            article: {
+                ...(selectedReport.article || {}),
+                isReported: !currentlyReported
+            }
+         });
+      }
+      
+      // We still call the unreport API. The backend may handle it as a toggle,
+      // or the user may just want the visual toggle without removing the row.
       await reportService.unreportArticle(id);
-      setReports(prev => prev.filter(r => r._id !== id && r.id !== id));
-      setSuccessMessage("Article unreported successfully!");
+      
+      setSuccessMessage(`Successfully marked as ${!currentlyReported ? 'Reported' : 'Unreported'}!`);
       setTimeout(() => setSuccessMessage(null), 3000);
+      
     } catch (error) {
-      setErrorMessage("Failed to unreport article.");
+      setErrorMessage("Failed to update report status.");
       setTimeout(() => setErrorMessage(null), 3000);
+      
+      // Revert frontend state on failure
+      setReports(prev => prev.map(r => {
+        if (r._id === id || r.id === id) {
+          return {
+            ...r,
+            article: {
+              ...(r.article || {}),
+              isReported: currentlyReported
+            }
+          };
+        }
+        return r;
+      }));
+      
+      if (selectedReport && (selectedReport._id === id || selectedReport.id === id)) {
+         setSelectedReport({
+            ...selectedReport,
+            article: {
+                ...(selectedReport.article || {}),
+                isReported: currentlyReported
+            }
+         });
+      }
     }
+  };
+
+  const openEditModal = (report: ReportData) => {
+      setSelectedReport(report);
+      setIsEditModalOpen(true);
+  };
+
+  const openViewModal = (report: ReportData) => {
+      setSelectedReport(report);
+      setIsViewModalOpen(true);
   };
 
   const confirmDelete = (id: string) => {
@@ -188,8 +285,13 @@ export default function ArticleReportsPage() {
                         ) : paginatedReports.length > 0 ? (
                             paginatedReports.map((report, index) => {
                                 const id = report._id || report.id || index.toString();
-                                const articleTitle = report.article?.title || report.article?.name || "Unknown Article";
-                                const articleLink = report.article?._id ? `/post/edit/${report.article._id}` : "#";
+                                const articleTitle = (report as any).articleTitle || report.article?.title || report.article?.name || "Unknown Article";
+                                
+                                const articleIdRaw = report.article;
+                                const articleIdStr = typeof articleIdRaw === 'object' ? (articleIdRaw._id || articleIdRaw.id) : articleIdRaw;
+                                const articleLink = articleIdStr ? `/post/view/${articleIdStr}` : "#";
+                                
+                                const desc = report.description || (report as any).message || (report as any).details || (report as any).text || (report as any).reportedMessages;
                                 
                                 return (
                                 <TableRow key={id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
@@ -200,13 +302,13 @@ export default function ArticleReportsPage() {
                                             {report.reason || "N/A"}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="max-w-[300px] truncate" title={report.description}>
-                                        {report.description || "No description provided."}
+                                    <TableCell className="max-w-[300px] truncate" title={desc}>
+                                        {desc || "No description provided."}
                                     </TableCell>
                                     <TableCell className="max-w-[200px] truncate">
-                                        {report.article ? (
-                                            <Link href={articleLink} className="text-blue-600 hover:underline dark:text-blue-400">
-                                                {articleTitle}
+                                        {(report as any).articleTitle || report.article ? (
+                                            <Link href={articleLink} className="text-blue-600 hover:underline dark:text-blue-400 font-medium">
+                                                {articleTitle !== "Unknown Article" ? articleTitle : "View Article"}
                                             </Link>
                                         ) : (
                                             <span className="text-muted-foreground">N/A</span>
@@ -215,12 +317,21 @@ export default function ArticleReportsPage() {
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-2">
                                             <Button 
-                                                size="sm" 
-                                                className="bg-green-600 hover:bg-green-700 text-white rounded-md"
-                                                onClick={() => handleUnreport(id)}
-                                                title="Unreport Article"
+                                                size="icon" 
+                                                className="h-8 w-8 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-md dark:bg-blue-900/20 dark:text-blue-400"
+                                                onClick={() => openViewModal(report)}
+                                                title="View Details"
                                             >
-                                                Unreport
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+
+                                            <Button 
+                                                size="icon" 
+                                                className="h-8 w-8 bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 rounded-md dark:bg-amber-900/20 dark:text-amber-400"
+                                                onClick={() => openEditModal(report)}
+                                                title="Update Status"
+                                            >
+                                                <Pencil className="h-4 w-4" />
                                             </Button>
 
                                             <Button 
@@ -284,10 +395,85 @@ export default function ArticleReportsPage() {
                         Next
                         <ChevronRight className="h-4 w-4" />
                     </Button>
-                </div>
             </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* View Modal */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <span className="font-semibold text-sm text-right">Reason:</span>
+                <span className="col-span-3 text-sm text-red-600 font-medium capitalize">{selectedReport.reason || "N/A"}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <span className="font-semibold text-sm text-right">Reporter:</span>
+                <span className="col-span-3 text-sm">
+                  {selectedReport.reportedBy?.email || "Unknown"}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <span className="font-semibold text-sm text-right">Article:</span>
+                <span className="col-span-3 text-sm font-medium">
+                  {(selectedReport as any).articleTitle || selectedReport.article?.title || selectedReport.article?.name || "Unknown Article"}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 items-center">
+                <span className="font-semibold text-sm text-right">Status:</span>
+                <span className="col-span-3">
+                  <Badge className={selectedReport.article?.isReported !== false ? "bg-amber-400 text-black" : "bg-green-600"}>
+                    {selectedReport.article?.isReported !== false ? "Reported" : "Unreported"}
+                  </Badge>
+                </span>
+              </div>
+              <hr className="my-2 border-muted" />
+              <div>
+                <span className="font-semibold text-sm block mb-2">Description:</span>
+                <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
+                  {selectedReport.description || (selectedReport as any).message || (selectedReport as any).details || (selectedReport as any).text || (selectedReport as any).reportedMessages || "No description provided."}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Report Status</DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="flex flex-col items-center space-y-6 py-6">
+              <p className="text-center text-sm text-muted-foreground">
+                Current Status:
+                <Badge className={`ml-2 ${selectedReport.article?.isReported !== false ? "bg-amber-400 text-black" : "bg-green-600 text-white"}`}>
+                  {selectedReport.article?.isReported !== false ? "Reported" : "Unreported"}
+                </Badge>
+              </p>
+              <div className="flex justify-center w-full">
+                <Button 
+                    size="lg" 
+                    className={`w-full rounded-md text-white font-semibold text-base ${selectedReport.article?.isReported !== false ? "bg-green-600 hover:bg-green-700" : "bg-amber-500 hover:bg-amber-600"}`}
+                    onClick={() => {
+                        const id = selectedReport._id || selectedReport.id || "";
+                        handleUnreportToggle(id, selectedReport.article?.isReported !== false);
+                    }}
+                >
+                    {selectedReport.article?.isReported !== false ? "Change to Unreported" : "Change to Reported"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>

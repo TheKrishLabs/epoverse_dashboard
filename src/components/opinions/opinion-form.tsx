@@ -154,7 +154,7 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
         try {
             const keywordsArray = metaKeyword.split(',').map(k => k.trim()).filter(k => k !== "")
 
-            const serviceData: Partial<OpinionData> = {
+            const serviceData: Partial<OpinionData> & { isActive?: boolean } = {
                 language,
                 name,
                 designation,
@@ -169,11 +169,25 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
                 metaDescription,
                 isLatest,
                 isPublished,
-                status
+                status: status === 'Active' ? 'active' : 'inactive',
+                isActive: status === 'Active'
             }
 
             if (isEditing && initialData && (initialData.id || initialData._id)) {
-                await opinionService.updateOpinion((initialData.id || initialData._id) as string, serviceData)
+                const opinionId = (initialData.id || initialData._id) as string;
+                await opinionService.updateOpinion(opinionId, serviceData)
+                
+                if (isPublished !== initialData.isPublished) {
+                    await opinionService.updateOpinionPublishStatus(opinionId, isPublished);
+                }
+
+                // WORKAROUND: Save status to localStorage since backend schema drops it
+                if (typeof window !== 'undefined') {
+                    const localStatuses = JSON.parse(localStorage.getItem('opinionStatuses') || '{}');
+                    localStatuses[opinionId] = status === 'Active';
+                    localStorage.setItem('opinionStatuses', JSON.stringify(localStatuses));
+                }
+                
                 alert("Opinion updated successfully!")
             } else {
                 await opinionService.createOpinion(serviceData)
@@ -420,15 +434,17 @@ export function OpinionForm({ initialData, isEditing = false }: OpinionFormProps
                             />
                             <Label htmlFor="isLatest" className="cursor-pointer">Mark as Latest Opinion</Label>
                         </div>
-                        <div className="flex items-center space-x-2 pt-2">
-                            <input 
-                                type="checkbox" 
-                                id="isPublished" 
-                                checked={isPublished} 
-                                onChange={(e) => setIsPublished(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <Label htmlFor="isPublished" className="cursor-pointer">Publish</Label>
+                        <div className="space-y-2 pt-2">
+                            <Label>Publish Status</Label>
+                            <Select onValueChange={(val) => setIsPublished(val === "true")} value={isPublished ? "true" : "false"}>
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Select Publish Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="true">Published</SelectItem>
+                                    <SelectItem value="false">Unpublished</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>

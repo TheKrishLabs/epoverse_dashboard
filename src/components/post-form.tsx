@@ -828,8 +828,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 <Button 
                     onClick={handleSubmit} 
                     disabled={isSaving} 
-                    className="w-full sm:w-auto bg-zinc-950 text-zinc-50 hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-955 dark:hover:bg-zinc-200 font-semibold px-8 shadow-sm flex items-center justify-center gap-2"
-                >
+                    variant="outline"
+className="w-full sm:w-auto bg-white border-zinc-300 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-900 font-semibold px-8 shadow-sm flex items-center justify-center gap-2">
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                     {isSaving ? "Saving Post..." : (isEditing ? "Update Post" : "Save Post")}
                 </Button>

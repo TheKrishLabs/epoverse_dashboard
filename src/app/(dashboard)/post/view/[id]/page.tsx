@@ -1,16 +1,13 @@
-
 "use client";
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-// import { format } from "date-fns";
 import { ArrowLeft, Calendar, User, Globe, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
-
+import { Input } from "@/components/ui/input";
 
 interface ViewPostPageProps {
   params: Promise<{ id: string }>;
@@ -18,16 +15,18 @@ interface ViewPostPageProps {
 
 export default function ViewPostPage({ params }: ViewPostPageProps) {
     const { id } = use(params);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [post, setPost] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+
 
     useEffect(() => {
         const loadPost = async () => {
             try {
                 const { postService } = await import("@/services/post-service");
                 const data = await postService.getArticleById(id);
+                
                 if (data) {
                     setPost(data);
                 } else {
@@ -60,6 +59,8 @@ export default function ViewPostPage({ params }: ViewPostPageProps) {
             </div>
         );
     }
+
+
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -120,6 +121,8 @@ export default function ViewPostPage({ params }: ViewPostPageProps) {
                     />
                 </CardContent>
             </Card>
+
+
         </div>
 
         {/* Sidebar / Metadata */}
