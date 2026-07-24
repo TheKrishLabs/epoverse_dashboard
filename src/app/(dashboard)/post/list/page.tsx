@@ -54,6 +54,11 @@ export default function PostPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // --- Status Update dialog state ---
+  const [statusTarget, setStatusTarget] = useState<{ id: string; title: string; currentStatus: string; newStatus: string } | null>(null);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
   useEffect(() => {
     loadArticles();
     loadFilterOptions();
@@ -129,7 +134,58 @@ export default function PostPage() {
     }
   };
 
-  const columns = useMemo(() => createColumns(handleDeleteRequest), [handleDeleteRequest]);
+  /** Called by columns — opens the status update dialog */
+  const handleStatusRequest = useCallback((article: Article) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const id = article._id || (article as any).id;
+    const title = article.headline || article.title || "this article";
+    const currentStatus = (article.status || "").toLowerCase();
+    
+    let newStatus = "";
+    if (currentStatus === "draft") {
+      newStatus = "published";
+    } else if (currentStatus === "published" || currentStatus === "active") {
+      newStatus = "unpublished";
+    } else if (currentStatus === "unpublished" || currentStatus === "inactive") {
+      newStatus = "published";
+    } else {
+      newStatus = "published";
+    }
+
+    setStatusError(null);
+    setStatusTarget({ id, title, currentStatus, newStatus });
+  }, []);
+
+  const handleStatusConfirm = async () => {
+    if (!statusTarget) return;
+    setIsStatusUpdating(true);
+    setStatusError(null);
+    try {
+      // Use updateArticleStatus to only patch the status field without wiping other data
+      // @ts-ignore - Ignore type error if updateArticleStatus doesn't expect exact string literals in older types
+      await postService.updateArticleStatus(statusTarget.id, statusTarget.newStatus);
+      
+      // Optimistic update
+      setArticles((prev) => prev.map((a) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const aid = a._id || (a as any).id;
+        if (aid === statusTarget.id) {
+          // Keep original casing for published/unpublished
+          const displayStatus = statusTarget.newStatus === "published" ? "Published" : "Unpublished";
+          return { ...a, status: displayStatus };
+        }
+        return a;
+      }));
+      setStatusTarget(null);
+    } catch (err) {
+      console.error("Status update failed:", err);
+      setStatusError("Failed to update status. Please try again.");
+    } finally {
+      setIsStatusUpdating(false);
+    }
+  };
+
+  const columns = useMemo(() => createColumns(handleDeleteRequest, handleStatusRequest), [handleDeleteRequest, handleStatusRequest]);
 
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
@@ -362,6 +418,61 @@ export default function PostPage() {
                 <Trash2 className="h-4 w-4" />
               )}
               {isDeleting ? "Deleting…" : "Yes, Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Status Update Dialog ─────────────────────────── */}
+      <Dialog
+        open={!!statusTarget}
+        onOpenChange={(open) => {
+          if (!open && !isStatusUpdating) setStatusTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Article Status</DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to change the status of{" "}
+              <span className="font-semibold text-foreground">
+                &ldquo;{statusTarget?.title}&rdquo;
+              </span>{" "}
+              from{" "}
+              <Badge variant="outline" className="capitalize mx-1">
+                {statusTarget?.currentStatus}
+              </Badge>{" "}
+              to{" "}
+              <Badge className="capitalize mx-1">
+                {statusTarget?.newStatus}
+              </Badge>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          {statusError && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription>{statusError}</AlertDescription>
+            </Alert>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setStatusTarget(null)}
+              disabled={isStatusUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStatusConfirm}
+              disabled={isStatusUpdating}
+              className={`gap-2 ${statusTarget?.newStatus === 'published' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-yellow-600 hover:bg-yellow-700 text-white'}`}
+            >
+              {isStatusUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              {isStatusUpdating ? "Updating…" : `Confirm ${statusTarget?.newStatus === 'published' ? 'Publish' : 'Unpublish'}`}
             </Button>
           </DialogFooter>
         </DialogContent>

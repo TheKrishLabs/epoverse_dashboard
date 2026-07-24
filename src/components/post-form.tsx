@@ -183,10 +183,10 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = initialData as any;
         return {
-            latest: d?.isLatest || d?.settings?.latest || false,
-            trending: d?.isTrending || d?.settings?.trending || false,
+            latest: d?.isLatest || d?.latest || d?.settings?.latest || false,
+            trending: d?.isTrending || d?.trending || d?.settings?.trending || false,
             recommended: d?.settings?.recommended || false,
-            publish: d?.status === "published" || d?.status === "Publish" || d?.settings?.publish || false,
+            publish: d?.status?.toLowerCase() === "published" || d?.status?.toLowerCase() === "active" || d?.settings?.publish || false,
         };
     });
     

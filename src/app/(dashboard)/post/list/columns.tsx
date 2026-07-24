@@ -12,7 +12,8 @@ import { format } from "date-fns";
 
 /** Factory — call this to get columns with delete wired up */
 export function createColumns(
-  onDelete: (id: string, title: string) => void
+  onDelete: (id: string, title: string) => void,
+  onStatusClick?: (article: Article) => void
 ): ColumnDef<Article>[] {
   return [
     {
@@ -82,9 +83,25 @@ export function createColumns(
         </Button>
       ),
       cell: ({ row }) => {
-        const dateStr = row.getValue("createdAt") as string;
-        if (!dateStr) return <span>N/A</span>;
-        return <span>{format(new Date(dateStr), "MMM dd, yyyy")}</span>;
+        const article = row.original as any;
+        const dateStr = article.createdAt || article.created_at || article.publishDate || article.date || article.releaseDate || article.postDate || article.updatedAt;
+        
+        let d: Date | null = null;
+        
+        if (dateStr) {
+          d = new Date(dateStr);
+        } else if (article._id && typeof article._id === 'string' && article._id.length === 24) {
+          // Fallback to extracting creation date from MongoDB ObjectId
+          const timestamp = parseInt(article._id.substring(0, 8), 16) * 1000;
+          d = new Date(timestamp);
+        } else if (article.id && typeof article.id === 'string' && article.id.length === 24) {
+          const timestamp = parseInt(article.id.substring(0, 8), 16) * 1000;
+          d = new Date(timestamp);
+        }
+        
+        if (!d || isNaN(d.getTime())) return <span>-</span>;
+        
+        return <span>{format(d, "MMM dd, yyyy")}</span>;
       },
     },
     {
@@ -100,11 +117,12 @@ export function createColumns(
           status === "Active";
         return (
           <Badge
-            className={
+            className={`cursor-pointer ${
               isPublish
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600"
                 : "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600"
-            }
+            }`}
+            onClick={() => onStatusClick && onStatusClick(row.original)}
           >
             {status}
           </Badge>

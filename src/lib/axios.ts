@@ -29,17 +29,20 @@ axiosInstance.interceptors.request.use(
       } else {
         console.warn(`[Axios] NO token found in localStorage for: ${config.url}`);
       }
-      
+
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-    
-    // For Axios 1.x, setting it to multipart/form-data allows it to correctly append the boundary
+
+    // When sending FormData, DELETE the Content-Type header so the browser
+    // auto-generates 'multipart/form-data; boundary=----xxxx'.
+    // Manually setting it to 'multipart/form-data' strips the boundary and
+    // causes the backend (multer) to hang until the 60s timeout.
     if (config.data instanceof FormData && config.headers) {
-      config.headers['Content-Type'] = 'multipart/form-data';
+      delete config.headers['Content-Type'];
     }
-    
+
     return config;
   },
   (error: AxiosError) => {
@@ -59,33 +62,33 @@ axiosInstance.interceptors.response.use(
     // Handle global errors
     if (error.response) {
       const { status } = error.response;
-      
+
       if (status === 401) {
         // Unauthorized - Clear token and redirect to login
         if (typeof window !== 'undefined') {
-            // Check if we are not already on the login page to avoid loops
-            if (!window.location.pathname.includes('/login')) {
-                 localStorage.removeItem('authToken');
-                 localStorage.removeItem('user');
-                 // Optional: Clear cookies logic here if needed
-                 document.cookie = "authToken=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-                 // We intentionally do NOT use window.location.href = '/login' here to prevent abrupt
-                 // unmounting of pages or losing user form progress.
-                 // The UI (e.g. Next.js middleware or Auth guards) should gracefully react to the missing token.
-                 console.warn("Session expired or invalid token. Please log in again.");
-            }
+          // Check if we are not already on the login page to avoid loops
+          if (!window.location.pathname.includes('/login')) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            // Optional: Clear cookies logic here if needed
+            document.cookie = "authToken=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+            // We intentionally do NOT use window.location.href = '/login' here to prevent abrupt
+            // unmounting of pages or losing user form progress.
+            // The UI (e.g. Next.js middleware or Auth guards) should gracefully react to the missing token.
+            console.warn("Session expired or invalid token. Please log in again.");
+          }
         }
       }
-      
+
       // You can handle other status codes here (403, 404, 500 etc.)
     }
-    
+
     // Construct a more usable error object or just reject
     const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected error occurred';
     // Attach custom message to error object for easier access in types
     // @ts-expect-error Adding custom property
     error.customMessage = errorMessage;
-    
+
     return Promise.reject(error);
   }
 );
@@ -119,7 +122,7 @@ const api = {
     const response = await axiosInstance.delete<T>(url, config);
     return response.data;
   },
-  
+
   // Expose the instance if needed for advanced usage
   instance: axiosInstance
 };

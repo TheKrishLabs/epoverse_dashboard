@@ -18,16 +18,16 @@ export const reportService = {
     try {
       const response = await api.get<any>('/reports');
       console.log("Fetch Reports Response:", response);
-      
+
       let items: ReportData[] = [];
       if (Array.isArray(response)) items = response;
       else if (response && typeof response === 'object') {
-          if (Array.isArray(response.data)) items = response.data;
-          else if (Array.isArray(response.reports)) items = response.reports;
-          else {
-              const firstArray = Object.values(response).find(val => Array.isArray(val));
-              if (firstArray) items = firstArray as ReportData[];
-          }
+        if (Array.isArray(response.data)) items = response.data;
+        else if (Array.isArray(response.reports)) items = response.reports;
+        else {
+          const firstArray = Object.values(response).find(val => Array.isArray(val));
+          if (firstArray) items = firstArray as ReportData[];
+        }
       }
       return items;
     } catch (error) {
@@ -40,13 +40,14 @@ export const reportService = {
     try {
       const response = await api.get<any>(`/reports/${id}`);
       const data = response?.data || response?.report || response;
+      console.log(data.description);
       if (data && typeof data === 'object' && (data._id || data.id)) {
-          return data as ReportData;
+        return data as ReportData;
       }
       return undefined;
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
-          return undefined;
+        return undefined;
       }
       throw error;
     }
@@ -57,6 +58,11 @@ export const reportService = {
     return response?.data || response;
   },
 
+  reReportArticle: async (id: string): Promise<any> => {
+    const response = await api.patch<any>(`/reports/${id}/report`);
+    return response?.data || response;
+  },
+
   deleteReport: async (id: string): Promise<boolean> => {
     await api.delete(`/reports/${id}`);
     return true;
@@ -64,8 +70,8 @@ export const reportService = {
 
   createReport: async (articleId: string, reason: string, description: string): Promise<any> => {
     const response = await api.post<any>(`/reports/article/${articleId}`, {
-        reason,
-        description
+      reason,
+      description
     });
     return response?.data || response;
   }

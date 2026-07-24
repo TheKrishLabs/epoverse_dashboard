@@ -77,6 +77,17 @@ export const commentService = {
     }
   },
 
+  // Update unreport to report comment (admin toggle)
+  reReportComment: async (id: string): Promise<any> => {
+    try {
+      const response = await api.patch<any>(`/comments/${id}/report`);
+      return response?.data || response;
+    } catch (error) {
+      console.error(`Failed to report comment ${id}:`, error);
+      throw error;
+    }
+  },
+
   // 5. Deleting a comment (admin)
   deleteCommentAdmin: async (id: string): Promise<boolean> => {
     try {

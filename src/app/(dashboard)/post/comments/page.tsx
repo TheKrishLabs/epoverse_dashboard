@@ -50,6 +50,11 @@ export default function PostCommentsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Toggle state
+  const [toggleId, setToggleId] = useState<string | null>(null);
+  const [isToggleReported, setIsToggleReported] = useState<boolean>(false);
+  const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
+
   // View & Edit Modals
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState<CommentData | null>(null);
@@ -61,7 +66,7 @@ export default function PostCommentsPage() {
     try {
       // 1. Fetch all comments
       const data = await commentService.fetchComments();
-      
+
       console.log("RAW COMMENTS FROM BACKEND:", data); // Check your browser console!
       const commentsWithTitles = await Promise.all(data.map(async (comment) => {
         const articleIdRaw = comment.articleId || comment.article || comment.post || comment.postId;
@@ -77,12 +82,12 @@ export default function PostCommentsPage() {
             if (article) {
               title = article.headline || article.title;
             } else {
-               // If fetching article failed, maybe it's a post instead of an article
-               const post = await postService.getPostById(articleIdStr);
-               if (post) {
-                   title = post.title;
-               }
-               
+              // If fetching article failed, maybe it's a post instead of an article
+              const post = await postService.getPostById(articleIdStr);
+              if (post) {
+                title = post.title;
+              }
+
             }
           } catch (e) {
             console.error("Could not fetch article/post for comment:", articleIdStr);
@@ -110,13 +115,13 @@ export default function PostCommentsPage() {
   // Filter Logic
   const filteredComments = comments.filter(comment => {
     const searchLower = searchQuery.toLowerCase();
-    
+
     // Extract possible values
-    const userName = comment.userName || comment.user?.name || comment.user?.username || "";
-    const userEmail = comment.userEmail || comment.user?.email || "";
+    const userName = comment.userName || comment.user?.name || comment.user?.username || comment.author?.name || "";
+    const userEmail = comment.userEmail || comment.user?.email || comment.author?.email || "";
     const commentText = comment.content || comment.comment || comment.message || "";
     const postTitle = comment.postTitle || "";
-    
+
     return (
       userName.toLowerCase().includes(searchLower) ||
       userEmail.toLowerCase().includes(searchLower) ||
@@ -137,31 +142,57 @@ export default function PostCommentsPage() {
   };
 
   // Actions
-  const handleReportToggle = async (id: string, currentlyReported: boolean) => {
-    try {
-      // Toggle locally first
-      setComments(prev => prev.map(c =>
-        (c._id === id || c.id === id) ? { ...c, isReported: !currentlyReported } : c
-      ));
-      
-      // Call the API
-      // Using unreportComment which maps to /comments/:id/unreport
-      await commentService.unreportComment(id);
-      
-    } catch (error) {
-      setErrorMessage("Failed to toggle report status.");
+  const confirmToggle = (id: string, currentIsReported: boolean) => {
+    setToggleId(id);
+    setIsToggleReported(currentIsReported);
+    setIsToggleDialogOpen(true);
+  };
+
+  const handleToggle = async () => {
+    if (toggleId) {
+      try {
+        if (isToggleReported) {
+          // If true, user clicked "Unreport" to unreport it
+          await commentService.unreportComment(toggleId);
+          setComments(prev => prev.map(c =>
+            (c._id === toggleId || c.id === toggleId) ? { ...c, isReported: false } : c
+          ));
+          setSuccessMessage("Comment unreported successfully!");
+        } else {
+          // If false, user clicked "Report" to report it
+          await commentService.reReportComment(toggleId);
+          setComments(prev => prev.map(c =>
+            (c._id === toggleId || c.id === toggleId) ? { ...c, isReported: true } : c
+          ));
+          setSuccessMessage("Comment reported successfully!");
+        }
+      } catch (error: any) {
+        const errMsg = error.response?.data?.message || error.message || "Unknown error";
+        setErrorMessage(isToggleReported ? `Failed to unreport comment: ${errMsg}` : `Failed to report comment: ${errMsg}`);
+      }
+      setIsToggleDialogOpen(false);
+      setToggleId(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
       setTimeout(() => setErrorMessage(null), 3000);
-      
-      // Revert on failure
-      setComments(prev => prev.map(c =>
-        (c._id === id || c.id === id) ? { ...c, isReported: currentlyReported } : c
-      ));
     }
   };
 
-  const handleView = (comment: CommentData) => {
+  const openViewModal = async (comment: CommentData) => {
     setSelectedComment(comment);
     setIsViewModalOpen(true);
+    
+    // Fetch full comment data
+    try {
+      const id = comment._id || comment.id;
+      if (id) {
+        const fullComment = await commentService.getCommentById(id);
+        if (fullComment) {
+          setSelectedComment({ ...comment, ...fullComment });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch full comment details:", error);
+    }
   };
 
   const handleEdit = (comment: CommentData) => {
@@ -294,7 +325,7 @@ export default function PostCommentsPage() {
                 ) : paginatedComments.length > 0 ? (
                   paginatedComments.map((comment, index) => {
                     const id = comment._id || comment.id || index.toString();
-                    const isReported = comment.isReported === true; // Default to unreported if false or undefined
+                    const isReported = comment.isReported || (comment as any).isReport;
 
                     return (
                       <TableRow key={id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
@@ -322,7 +353,6 @@ export default function PostCommentsPage() {
                                 </Link>
                               );
                             }
-                            // As requested, do NOT show the ID if title is missing.
                             return (
                               <div className="text-muted-foreground text-xs">
                                 N/A <br />
@@ -332,30 +362,22 @@ export default function PostCommentsPage() {
                           })()}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={!isReported
-                              ? "bg-green-600 hover:bg-green-700 text-white"
-                              : "bg-amber-400 hover:bg-amber-500 text-black"
-                            }
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-8 font-medium w-full ${isReported ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300" : "bg-green-100 text-green-700 hover:bg-green-200 border-green-300"}`}
+                            onClick={() => confirmToggle(id, isReported)}
                           >
-                            {isReported ? "Reported" : "Unreported"}
-                          </Badge>
+                            {isReported ? "Unreport" : "Report"}
+                          </Button>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
                             <Button
-                                size="sm"
-                                className={`rounded-md text-white h-8 px-2 text-xs ${isReported ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}`}
-                                onClick={() => handleReportToggle(id, isReported)}
-                                title={isReported ? "Unreport Comment" : "Report Comment"}
-                            >
-                                {isReported ? "Unreport" : "Report"}
-                            </Button>
-
-                            <Button
-                              size="icon"
-                              className="h-8 w-8 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-md dark:bg-blue-900/20 dark:text-blue-400"
-                              onClick={() => handleView(comment)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-800 p-0 h-8 w-8"
+                              onClick={() => openViewModal(comment)}
                               title="View"
                             >
                               <Eye className="h-4 w-4" />
@@ -443,6 +465,26 @@ export default function PostCommentsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmation Dialog for Toggle */}
+      <Dialog open={isToggleDialogOpen} onOpenChange={setIsToggleDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm {isToggleReported ? 'Report' : 'Unreport'}</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {isToggleReported ? 'report' : 'unreport'} this comment?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsToggleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="default" onClick={handleToggle}>
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Comment Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="sm:max-w-md">
@@ -463,9 +505,9 @@ export default function PostCommentsPage() {
                 <span className="font-semibold text-sm text-right">Status:</span>
                 <span className="col-span-3">
                   <Badge
-                    className={selectedComment.isReported ? "bg-amber-400 text-black" : "bg-green-600"}
+                    className={(selectedComment.status !== "Approved" || selectedComment.isReported) ? "bg-amber-400 text-black" : "bg-green-600"}
                   >
-                    {selectedComment.isReported ? "Reported" : "Unreported"}
+                    {(selectedComment.status !== "Approved" || selectedComment.isReported) ? "Pending" : "Approved"}
                   </Badge>
                 </span>
               </div>
@@ -476,11 +518,13 @@ export default function PostCommentsPage() {
                   {selectedComment.comment || selectedComment.message || selectedComment.content || selectedComment.text || "No content"}
                 </p>
               </div>
-              {(selectedComment.reportedReason) && (
+              {(selectedComment.reportedReason || selectedComment.reportedMessages) && (
                 <div>
-                  <span className="font-semibold text-sm block mb-2 text-red-600">Reported Reason:</span>
+                  <span className="font-semibold text-sm block mb-2 text-red-600">Reported Details:</span>
                   <p className="text-sm bg-red-50 text-red-800 p-3 rounded-md">
-                    {selectedComment.reportedReason}
+                    {selectedComment.reportedReason && <strong>Reason: </strong>} {selectedComment.reportedReason}
+                    {selectedComment.reportedReason && selectedComment.reportedMessages && <br/>}
+                    {selectedComment.reportedMessages && <strong>Message: </strong>} {selectedComment.reportedMessages}
                   </p>
                 </div>
               )}

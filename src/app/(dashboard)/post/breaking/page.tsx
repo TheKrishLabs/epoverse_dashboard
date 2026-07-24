@@ -11,7 +11,11 @@ import {
   Loader2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { format } from "date-fns";
+import { Eye } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,6 +69,10 @@ export default function BreakingPostPage() {
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
+  // Delete Dialog State
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   // --- Initial Data Fetching ---
   useEffect(() => {
     const fetchData = async () => {
@@ -99,13 +107,34 @@ export default function BreakingPostPage() {
       try {
         await postService.removeTrendingArticle(updateId);
         setPosts(prev => prev.filter(p => p._id !== updateId));
-        setSuccessMessage("Post changed to general successfully!");
+        setSuccessMessage("Post status changed to Untrending and removed from the trending section!");
         setIsUpdateDialogOpen(false);
         setUpdateId(null);
         setTimeout(() => setSuccessMessage(null), 3000);
       } catch (err) {
         console.error("Failed to update trending post:", err);
         alert("Failed to change trending status.");
+      }
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    setDeleteId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (deleteId) {
+      try {
+        await postService.deleteArticle(deleteId);
+        setPosts(prev => prev.filter(p => p._id !== deleteId));
+        setSuccessMessage("Post deleted successfully!");
+        setIsDeleteDialogOpen(false);
+        setDeleteId(null);
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } catch (err) {
+        console.error("Failed to delete post:", err);
+        alert("Failed to delete post.");
       }
     }
   };
@@ -230,12 +259,7 @@ export default function BreakingPostPage() {
                                     <ArrowUpDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
-                            <TableHead className="w-[120px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('language')}>
-                                 <div className="flex items-center gap-1">
-                                    Language
-                                    <ArrowUpDown className="h-3 w-3" />
-                                </div>
-                            </TableHead>
+                            <TableHead className="font-bold text-emerald-900 dark:text-emerald-100">Status</TableHead>
                             <TableHead className="w-[100px] font-bold text-emerald-900 dark:text-emerald-100 text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -251,16 +275,35 @@ export default function BreakingPostPage() {
                                     </TableCell>
                                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                     <TableCell>{(post.createdAt || (post as any).time || (post as any).date) ? format(new Date(post.createdAt || (post as any).time || (post as any).date), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
-                                    <TableCell>{getLanguageName(post.language)}</TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant="default"
+                                            className="bg-emerald-500 hover:bg-emerald-600 cursor-pointer capitalize shadow-none transition-colors"
+                                            onClick={() => confirmUpdate(post._id as string)}
+                                        >
+                                            Trending
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="h-8 w-8 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-md dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                                                onClick={() => confirmUpdate(post._id)}
+                                            <Link href={`/post/view/${post._id}`}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-md dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                                                    title="View"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                            </Link>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                                                title="Delete"
+                                                onClick={() => confirmDelete(post._id as string)}
                                             >
-                                                <Edit className="h-4 w-4" />
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -319,18 +362,38 @@ export default function BreakingPostPage() {
         </CardContent>
       </Card>
 
-      {/* Update Confirmation Modal */}
+      {/* --- Remove from Trending Dialog --- */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Update</DialogTitle>
+            <DialogTitle>Change Status to Untrending</DialogTitle>
             <DialogDescription>
-              Are you sure you want to change this post from trending to general?
+              Are you sure you want to change this post&apos;s status from <span className="font-semibold text-emerald-600">Trending</span> to <span className="font-semibold text-orange-600">Untrending</span>? 
+              <br/><br/>
+              If it becomes Untrending, it will be automatically removed from this trending section.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
              <Button variant="ghost" onClick={() => setIsUpdateDialogOpen(false)}>Cancel</Button>
-             <Button onClick={handleUpdate}>Update to General</Button>
+             <Button onClick={handleUpdate}>Confirm Untrending</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this post completely? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
