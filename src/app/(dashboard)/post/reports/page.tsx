@@ -64,11 +64,9 @@ export default function ArticleReportsPage() {
     try {
       const data = await reportService.fetchReports();
 
-      const reportsWithTitles = [];
-      for (const report of data) {
+      const reportsWithTitles = await Promise.all(data.map(async (report: any) => {
         let updatedReport = { ...report };
         
-        // Fetch full report to ensure we have the description field for the table column
         const reportId = report._id || report.id;
         if (reportId) {
           try {
@@ -81,33 +79,13 @@ export default function ArticleReportsPage() {
           }
         }
 
-        let title = updatedReport.article?.title || updatedReport.article?.headline || updatedReport.article?.name;
-
-        const articleIdRaw = updatedReport.article;
-        const articleIdStr = typeof articleIdRaw === 'object' ? (articleIdRaw._id || articleIdRaw.id) : articleIdRaw;
-
-        if (!title && articleIdStr && typeof articleIdStr === 'string') {
-          try {
-            const { postService } = await import("@/services/post-service");
-            const article = await postService.getArticleById(articleIdStr);
-            if (article) {
-              title = article.headline || article.title;
-            } else {
-              const post = await postService.getPostById(articleIdStr);
-              if (post) {
-                title = post.title;
-              }
-            }
-          } catch (e) {
-            console.error("Failed to fetch article for report:", articleIdStr);
-          }
-        }
-
+        let title = updatedReport.article?.headline || updatedReport.article?.title || updatedReport.article?.name;
+        
         if (title) {
-          (updatedReport as any).articleTitle = title;
+          updatedReport.articleTitle = title;
         }
-        reportsWithTitles.push(updatedReport);
-      }
+        return updatedReport;
+      }));
 
       setReports(reportsWithTitles);
     } catch (error) {
@@ -219,6 +197,30 @@ export default function ArticleReportsPage() {
     }
   };
 
+  const handleUnreportFromView = async (id: string) => {
+    try {
+      await reportService.unreportArticle(id);
+      
+      setReports(prev => prev.map(r => {
+        if (r._id === id || r.id === id) {
+          return { ...r, article: { ...(r.article || {}), isReported: false } };
+        }
+        return r;
+      }));
+      
+      if (selectedReport) {
+        setSelectedReport({ ...selectedReport, article: { ...(selectedReport.article || {}), isReported: false } });
+      }
+      
+      setSuccessMessage("Report unreported successfully!");
+    } catch (error: any) {
+      const errMsg = error.response?.data?.message || error.message || "Unknown error";
+      setErrorMessage(`Failed to unreport: ${errMsg}`);
+    }
+    setTimeout(() => setSuccessMessage(null), 3000);
+    setTimeout(() => setErrorMessage(null), 3000);
+  };
+
   const openViewModal = async (report: ReportData) => {
     // Open modal immediately with base data to feel responsive
     setSelectedReport(report);
@@ -235,15 +237,7 @@ export default function ArticleReportsPage() {
           updatedReport = { ...updatedReport, ...fullReport };
         }
       }
-      
-      // The user indicated the description might only come when fetching the post by ID
-      const articleId = updatedReport.article?._id || (updatedReport as any).articleId;
-      if (articleId) {
-        const fullArticle = await postService.getArticleById(articleId).catch(() => null);
-        if (fullArticle) {
-          updatedReport.article = { ...updatedReport.article, ...fullArticle };
-        }
-      }
+      // Removed extra fetch for article by ID per user request
       
       setSelectedReport(updatedReport);
     } catch (error) {
@@ -328,14 +322,13 @@ export default function ArticleReportsPage() {
                   <TableHead className="font-bold">Reason</TableHead>
                   <TableHead className="font-bold">Description</TableHead>
                   <TableHead className="font-bold">Article</TableHead>
-                  <TableHead className="font-bold w-[100px]">Status</TableHead>
                   <TableHead className="font-bold w-[100px] text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Loading reports...
                     </TableCell>
                   </TableRow>
@@ -372,16 +365,6 @@ export default function ArticleReportsPage() {
                             <span className="text-muted-foreground">N/A</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-8 font-medium w-full ${isReported ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300" : "bg-green-100 text-green-700 hover:bg-green-200 border-green-300"}`}
-                            onClick={() => confirmToggle(id, isReported)}
-                          >
-                            {isReported ? "Unreport" : "Report"}
-                          </Button>
-                        </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
                             <Button
@@ -408,7 +391,7 @@ export default function ArticleReportsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       No reports found.
                     </TableCell>
                   </TableRow>
@@ -480,15 +463,21 @@ export default function ArticleReportsPage() {
               <div className="grid grid-cols-4 gap-2 items-center">
                 <span className="font-semibold text-sm text-right">Article:</span>
                 <span className="col-span-3 text-sm font-medium">
-                  {(selectedReport as any).articleTitle || selectedReport.article?.title || selectedReport.article?.name || "Unknown Article"}
-                </span>
-              </div>
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Status:</span>
-                <span className="col-span-3">
-                  <Badge className={selectedReport.article?.isReported !== false ? "bg-amber-400 text-black" : "bg-green-600"}>
-                    {selectedReport.article?.isReported !== false ? "Reported" : "Unreported"}
-                  </Badge>
+                  {(() => {
+                    const articleTitle = (selectedReport as any).articleTitle || selectedReport.article?.headline || selectedReport.article?.title || selectedReport.article?.name;
+                    const articleIdRaw = selectedReport.article;
+                    const articleIdStr = typeof articleIdRaw === 'object' ? (articleIdRaw._id || articleIdRaw.id) : articleIdRaw;
+                    const articleLink = articleIdStr ? `/post/view/${articleIdStr}` : "#";
+
+                    if (articleTitle) {
+                      return (
+                        <Link href={articleLink} className="text-blue-600 hover:underline dark:text-blue-400">
+                          {articleTitle}
+                        </Link>
+                      );
+                    }
+                    return <span className="text-muted-foreground">Unknown Article</span>;
+                  })()}
                 </span>
               </div>
               <hr className="my-2 border-muted" />
@@ -499,16 +488,21 @@ export default function ArticleReportsPage() {
                 </p>
               </div>
               
-              {selectedReport.article && (selectedReport.article.shortDescription || selectedReport.article.content) && (
-                <>
-                  <hr className="my-2 border-muted" />
-                  <div>
-                    <span className="font-semibold text-sm block mb-2">Post Content:</span>
-                    <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
-                      {selectedReport.article.shortDescription || selectedReport.article.content || "No content."}
-                    </p>
-                  </div>
-                </>
+              {selectedReport.article?.isReported !== false && (
+                <div className="mt-6 flex justify-end">
+                  <Button 
+                    variant="outline"
+                    className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300 font-medium"
+                    onClick={() => {
+                      const id = selectedReport._id || selectedReport.id;
+                      if (id) {
+                        handleUnreportFromView(id);
+                      }
+                    }}
+                  >
+                    Unreport Article
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -535,9 +529,9 @@ export default function ArticleReportsPage() {
       <Dialog open={isToggleDialogOpen} onOpenChange={setIsToggleDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirm {isToggleReported ? 'Report' : 'Unreport'}</DialogTitle>
+            <DialogTitle>Confirm {isToggleReported ? 'Unreport' : 'Report'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {isToggleReported ? 'report' : 'unreport'} this article?
+              Are you sure you want to {isToggleReported ? 'unreport' : 'report'} this article?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

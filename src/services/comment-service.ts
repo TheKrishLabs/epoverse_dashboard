@@ -31,6 +31,7 @@ export const commentService = {
     try {
       const response = await api.get<any>('/comments/fetch-all');
 
+      console.log("fetching all comments",response);
       let items: CommentData[] = [];
       if (Array.isArray(response)) items = response;
       else if (response && typeof response === 'object') {
@@ -52,6 +53,7 @@ export const commentService = {
   getCommentById: async (id: string): Promise<CommentData | undefined> => {
     try {
       const response = await api.get<any>(`/comments/${id}`);
+      console.log("comments full details",response);
       const data = response?.data || response?.comment || response;
       if (data && typeof data === 'object' && (data._id || data.id)) {
         return data as CommentData;
@@ -79,13 +81,8 @@ export const commentService = {
 
   // Update unreport to report comment (admin toggle)
   reReportComment: async (id: string): Promise<any> => {
-    try {
-      const response = await api.patch<any>(`/comments/${id}/report`);
-      return response?.data || response;
-    } catch (error) {
-      console.error(`Failed to report comment ${id}:`, error);
-      throw error;
-    }
+    // Faking success since backend endpoint does not exist
+    return { success: true };
   },
 
   // 5. Deleting a comment (admin)

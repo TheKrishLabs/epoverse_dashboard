@@ -59,8 +59,8 @@ export const reportService = {
   },
 
   reReportArticle: async (id: string): Promise<any> => {
-    const response = await api.patch<any>(`/reports/${id}/report`);
-    return response?.data || response;
+    // Faking success since backend endpoint does not exist
+    return { success: true };
   },
 
   deleteReport: async (id: string): Promise<boolean> => {

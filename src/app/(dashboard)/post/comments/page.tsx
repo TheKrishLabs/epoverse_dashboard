@@ -74,7 +74,9 @@ export default function PostCommentsPage() {
 
         let title = comment.postTitle || comment.articleId?.title || comment.articleId?.headline || comment.article?.title || comment.article?.headline || comment.post?.title || comment.post?.headline;
 
-        // If title is missing but we have an ID, we try to fetch the article
+        // Removed separate fetching of post per comment as requested by the user.
+        // The backend now provides article headline directly in the comment response.
+        /*
         if (!title && articleIdStr && typeof articleIdStr === 'string') {
           try {
             // Try to fetch the article by ID
@@ -87,12 +89,12 @@ export default function PostCommentsPage() {
               if (post) {
                 title = post.title;
               }
-
             }
           } catch (e) {
             console.error("Could not fetch article/post for comment:", articleIdStr);
           }
         }
+        */
 
         if (title) {
           return { ...comment, postTitle: title };
@@ -175,6 +177,29 @@ export default function PostCommentsPage() {
       setTimeout(() => setSuccessMessage(null), 3000);
       setTimeout(() => setErrorMessage(null), 3000);
     }
+  };
+
+  const handleUnreportFromView = async (id: string) => {
+    try {
+      await commentService.unreportComment(id);
+      
+      // Update local state in table
+      setComments(prev => prev.map(c => 
+        (c._id === id || c.id === id) ? { ...c, isReported: false } : c
+      ));
+      
+      // Update currently viewed comment
+      if (selectedComment) {
+        setSelectedComment({ ...selectedComment, isReported: false });
+      }
+      
+      setSuccessMessage("Comment unreported successfully!");
+    } catch (error: any) {
+      const errMsg = error.response?.data?.message || error.message || "Unknown error";
+      setErrorMessage(`Failed to unreport comment: ${errMsg}`);
+    }
+    setTimeout(() => setSuccessMessage(null), 3000);
+    setTimeout(() => setErrorMessage(null), 3000);
   };
 
   const openViewModal = async (comment: CommentData) => {
@@ -311,7 +336,6 @@ export default function PostCommentsPage() {
                   <TableHead className="font-bold">User</TableHead>
                   <TableHead className="font-bold">Comments</TableHead>
                   <TableHead className="font-bold">Post</TableHead>
-                  <TableHead className="font-bold w-[100px]">Status</TableHead>
                   <TableHead className="font-bold w-[100px] text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -360,16 +384,6 @@ export default function PostCommentsPage() {
                               </div>
                             );
                           })()}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-8 font-medium w-full ${isReported ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300" : "bg-green-100 text-green-700 hover:bg-green-200 border-green-300"}`}
-                            onClick={() => confirmToggle(id, isReported)}
-                          >
-                            {isReported ? "Unreport" : "Report"}
-                          </Button>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
@@ -469,9 +483,9 @@ export default function PostCommentsPage() {
       <Dialog open={isToggleDialogOpen} onOpenChange={setIsToggleDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirm {isToggleReported ? 'Report' : 'Unreport'}</DialogTitle>
+            <DialogTitle>Confirm {isToggleReported ? 'Unreport' : 'Report'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {isToggleReported ? 'report' : 'unreport'} this comment?
+              Are you sure you want to {isToggleReported ? 'unreport' : 'report'} this comment?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -499,18 +513,27 @@ export default function PostCommentsPage() {
               </div>
               <div className="grid grid-cols-4 gap-2 items-center">
                 <span className="font-semibold text-sm text-right">Post:</span>
-                <span className="col-span-3 text-sm">{selectedComment.postTitle || selectedComment.articleId?.title || selectedComment.article?.title || selectedComment.articleId?._id || selectedComment.articleId || "N/A"}</span>
-              </div>
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Status:</span>
-                <span className="col-span-3">
-                  <Badge
-                    className={(selectedComment.status !== "Approved" || selectedComment.isReported) ? "bg-amber-400 text-black" : "bg-green-600"}
-                  >
-                    {(selectedComment.status !== "Approved" || selectedComment.isReported) ? "Pending" : "Approved"}
-                  </Badge>
+                <span className="col-span-3 text-sm">
+                  {(() => {
+                    const postId = selectedComment.articleId?._id || selectedComment.articleId?.id || selectedComment.articleId || selectedComment.post?._id || selectedComment.post?.id || selectedComment.postId || selectedComment.article?._id || selectedComment.article?.id;
+                    const postTitle = selectedComment.postTitle || selectedComment.articleId?.headline || selectedComment.articleId?.title || selectedComment.article?.headline || selectedComment.article?.title || selectedComment.post?.headline || selectedComment.post?.title;
+
+                    if (postTitle) {
+                      return (
+                        <Link
+                          href={postId ? `/post/view/${typeof postId === 'object' ? postId._id || postId.id : postId}` : "#"}
+                          className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
+                          title={postTitle}
+                        >
+                          {postTitle}
+                        </Link>
+                      );
+                    }
+                    return "N/A";
+                  })()}
                 </span>
               </div>
+
               <hr className="my-2 border-muted" />
               <div>
                 <span className="font-semibold text-sm block mb-2">Comment Message:</span>
@@ -518,6 +541,23 @@ export default function PostCommentsPage() {
                   {selectedComment.comment || selectedComment.message || selectedComment.content || selectedComment.text || "No content"}
                 </p>
               </div>
+              
+              {selectedComment.isReported && (
+                <div className="mt-6 flex justify-end">
+                  <Button 
+                    variant="outline"
+                    className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300 font-medium"
+                    onClick={() => {
+                      const id = selectedComment._id || selectedComment.id;
+                      if (id) {
+                        handleUnreportFromView(id);
+                      }
+                    }}
+                  >
+                    Unreport Comment
+                  </Button>
+                </div>
+              )}
               {(selectedComment.reportedReason || selectedComment.reportedMessages) && (
                 <div>
                   <span className="font-semibold text-sm block mb-2 text-red-600">Reported Details:</span>

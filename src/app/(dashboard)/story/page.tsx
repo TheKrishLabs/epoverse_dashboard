@@ -170,11 +170,10 @@ export default function StoryManagePage() {
   };
 
   const downloadCSV = () => {
-    const headers = ["ID", "Title", "Views", "Date"];
+    const headers = ["ID", "Title", "Date"];
     const rows = stories.map(story => [
       story.id,
       `"${story.title.replace(/"/g, '""')}"`,
-      story.views,
       story.date
     ]);
 
@@ -205,7 +204,6 @@ export default function StoryManagePage() {
             <tr>
               <th>ID</th>
               <th>Title</th>
-              <th>Views</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -214,7 +212,6 @@ export default function StoryManagePage() {
               <tr>
                 <td>${story.id}</td>
                 <td>${story.title}</td>
-                <td>${story.views}</td>
                 <td>${story.date}</td>
               </tr>
             `).join('')}
@@ -349,12 +346,6 @@ export default function StoryManagePage() {
                       <ArrowUpDown className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="w-[150px] font-bold cursor-pointer" onClick={() => requestSort('views')}>
-                    <div className="flex items-center gap-1">
-                      Views / Hit Count
-                      <ArrowUpDown className="h-3 w-3" />
-                    </div>
-                  </TableHead>
                   <TableHead className="w-[180px] font-bold cursor-pointer" onClick={() => requestSort('date')}>
                     <div className="flex items-center gap-1">
                       Date & Time
@@ -367,7 +358,7 @@ export default function StoryManagePage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       Loading stories...
                     </TableCell>
                   </TableRow>
@@ -376,7 +367,6 @@ export default function StoryManagePage() {
                     <TableRow key={story.id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
                       <TableCell>{startIndex + index + 1}</TableCell>
                       <TableCell className="font-medium truncate max-w-[300px]" title={story.title}>{story.title}</TableCell>
-                      <TableCell>{story.views.toLocaleString()}</TableCell>
                       <TableCell>{format(new Date(story.date), "dd MMM yyyy, hh:mm a")}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
@@ -412,7 +402,7 @@ export default function StoryManagePage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       No stories found.
                     </TableCell>
                   </TableRow>
