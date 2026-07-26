@@ -64,28 +64,15 @@ export default function ArticleReportsPage() {
     try {
       const data = await reportService.fetchReports();
 
-      const reportsWithTitles = await Promise.all(data.map(async (report: any) => {
+      const reportsWithTitles = data.map((report: any) => {
         let updatedReport = { ...report };
-        
-        const reportId = report._id || report.id;
-        if (reportId) {
-          try {
-            const fullReport = await reportService.getReportById(reportId);
-            if (fullReport) {
-              updatedReport = { ...updatedReport, ...fullReport };
-            }
-          } catch (e) {
-            console.error("Failed to fetch full report for id:", reportId);
-          }
-        }
-
         let title = updatedReport.article?.headline || updatedReport.article?.title || updatedReport.article?.name;
         
         if (title) {
           updatedReport.articleTitle = title;
         }
         return updatedReport;
-      }));
+      });
 
       setReports(reportsWithTitles);
     } catch (error) {
@@ -320,7 +307,6 @@ export default function ArticleReportsPage() {
                 <TableRow>
                   <TableHead className="w-[50px] font-bold">Sl</TableHead>
                   <TableHead className="font-bold">Reason</TableHead>
-                  <TableHead className="font-bold">Description</TableHead>
                   <TableHead className="font-bold">Article</TableHead>
                   <TableHead className="font-bold w-[100px] text-center">Action</TableHead>
                 </TableRow>
@@ -328,7 +314,7 @@ export default function ArticleReportsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       Loading reports...
                     </TableCell>
                   </TableRow>
@@ -352,9 +338,6 @@ export default function ArticleReportsPage() {
                             <AlertTriangle className="h-4 w-4" />
                             {report.reason || "N/A"}
                           </div>
-                        </TableCell>
-                        <TableCell className="max-w-[300px] truncate" title={desc}>
-                          {desc || "No description provided."}
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {(report as any).articleTitle || report.article ? (
@@ -391,7 +374,7 @@ export default function ArticleReportsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       No reports found.
                     </TableCell>
                   </TableRow>
@@ -484,7 +467,7 @@ export default function ArticleReportsPage() {
               <div>
                 <span className="font-semibold text-sm block mb-2">Report Description:</span>
                 <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
-                  {selectedReport.description || (selectedReport as any).message || (selectedReport as any).details || (selectedReport as any).text || (selectedReport as any).reportedMessages || "No description provided."}
+                  {selectedReport.description || "No description provided."}
                 </p>
               </div>
               

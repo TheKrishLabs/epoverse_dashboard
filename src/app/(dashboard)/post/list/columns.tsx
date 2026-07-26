@@ -83,6 +83,7 @@ export function createColumns(
         </Button>
       ),
       cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const article = row.original as any;
         const dateStr = article.createdAt || article.created_at || article.publishDate || article.date || article.releaseDate || article.postDate || article.updatedAt;
         

@@ -162,7 +162,7 @@ export default function PostPage() {
     setStatusError(null);
     try {
       // Use updateArticleStatus to only patch the status field without wiping other data
-      // @ts-ignore - Ignore type error if updateArticleStatus doesn't expect exact string literals in older types
+      // @ts-expect-error - Ignore type error if updateArticleStatus doesn't expect exact string literals in older types
       await postService.updateArticleStatus(statusTarget.id, statusTarget.newStatus);
       
       // Optimistic update
