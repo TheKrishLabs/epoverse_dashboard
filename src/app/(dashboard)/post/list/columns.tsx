@@ -106,6 +106,20 @@ export function createColumns(
       },
     },
     {
+      accessorKey: "isReported",
+      header: "Reported",
+      cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const article = row.original as any;
+        const isReported = article.isReported === true;
+        return isReported ? (
+          <span className="font-medium text-amber-600 dark:text-amber-400">True</span>
+        ) : (
+          <span className="font-medium text-green-600 dark:text-green-400">False</span>
+        );
+      },
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {

@@ -308,13 +308,14 @@ export default function ArticleReportsPage() {
                   <TableHead className="w-[50px] font-bold">Sl</TableHead>
                   <TableHead className="font-bold">Reason</TableHead>
                   <TableHead className="font-bold">Article</TableHead>
+                  <TableHead className="font-bold w-[100px]">Reported</TableHead>
                   <TableHead className="font-bold w-[100px] text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Loading reports...
                     </TableCell>
                   </TableRow>
@@ -328,7 +329,7 @@ export default function ArticleReportsPage() {
                     const articleLink = articleIdStr ? `/post/view/${articleIdStr}` : "#";
 
                     const desc = report.description || (report as any).message || (report as any).details || (report as any).text || (report as any).reportedMessages;
-                    const isReported = report.article?.isReported ?? true;
+                    const isReported = report.article?.isReported === true;
 
                     return (
                       <TableRow key={id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
@@ -346,6 +347,13 @@ export default function ArticleReportsPage() {
                             </Link>
                           ) : (
                             <span className="text-muted-foreground">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isReported ? (
+                            <span className="font-medium text-amber-600 dark:text-amber-400">True</span>
+                          ) : (
+                            <span className="font-medium text-green-600 dark:text-green-400">False</span>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
@@ -374,7 +382,7 @@ export default function ArticleReportsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       No reports found.
                     </TableCell>
                   </TableRow>

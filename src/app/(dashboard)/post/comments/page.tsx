@@ -336,6 +336,7 @@ export default function PostCommentsPage() {
                   <TableHead className="font-bold">User</TableHead>
                   <TableHead className="font-bold">Comments</TableHead>
                   <TableHead className="font-bold">Post</TableHead>
+                  <TableHead className="font-bold w-[100px]">Reported</TableHead>
                   <TableHead className="font-bold w-[100px] text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -384,6 +385,13 @@ export default function PostCommentsPage() {
                               </div>
                             );
                           })()}
+                        </TableCell>
+                        <TableCell>
+                          {isReported === true ? (
+                            <span className="font-medium text-amber-600 dark:text-amber-400">True</span>
+                          ) : (
+                            <span className="font-medium text-green-600 dark:text-green-400">False</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
