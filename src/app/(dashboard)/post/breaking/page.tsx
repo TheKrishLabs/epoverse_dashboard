@@ -266,15 +266,12 @@ export default function BreakingPostPage() {
                     <TableBody>
                         {paginatedPosts.length > 0 ? (
                             paginatedPosts.map((post, index) => (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                <TableRow key={post._id || (post as any).id || index} className="hover:bg-muted/50 dark:hover:bg-muted/10">
+                                <TableRow key={post._id || (post as { id?: string }).id || index} className="hover:bg-muted/50 dark:hover:bg-muted/10">
                                     <TableCell>{startIndex + index + 1}</TableCell>
-                                    <TableCell className="font-medium max-w-[300px] truncate" title={post.title || post.headline || (post as any).headLine || (post as any).content || "N/A"}>
-                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                        {post.title || post.headline || (post as any).headLine || (post as any).content || "N/A"}
+                                    <TableCell className="font-medium max-w-[300px] truncate" title={post.title || post.headline || (post as { headLine?: string }).headLine || (post as { content?: string }).content || "N/A"}>
+                                        {post.title || post.headline || (post as { headLine?: string }).headLine || (post as { content?: string }).content || "N/A"}
                                     </TableCell>
-                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                    <TableCell className="pl-10">{(post.createdAt || (post as any).time || (post as any).date) ? format(new Date(post.createdAt || (post as any).time || (post as any).date), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
+                                    <TableCell className="pl-10">{(post.createdAt || (post as { time?: string }).time || (post as { date?: string }).date) ? format(new Date(post.createdAt || (post as { time?: string }).time || (post as { date?: string }).date as string), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
                                     <TableCell>
                                         <div className="flex justify-center">
                                             <Badge
