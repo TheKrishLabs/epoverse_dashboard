@@ -32,7 +32,7 @@ export function EmployeeList() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isFetchingForEdit, setIsFetchingForEdit] = useState<string | null>(null)
@@ -41,7 +41,7 @@ export function EmployeeList() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [selectedProfileUser, setSelectedProfileUser] = useState<User | null>(null)
   const [isFetchingForView, setIsFetchingForView] = useState<string | null>(null)
-  
+
   // Delete Dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
@@ -100,9 +100,9 @@ export function EmployeeList() {
       setIsFormOpen(true)
     } catch (err: unknown) {
       if (err instanceof Error) {
-         setError((err as { customMessage?: string }).customMessage || err.message)
+        setError((err as { customMessage?: string }).customMessage || err.message)
       } else {
-         setError("Failed to fetch user details.")
+        setError("Failed to fetch user details.")
       }
     } finally {
       setIsFetchingForEdit(null)
@@ -139,9 +139,9 @@ export function EmployeeList() {
       setIsProfileOpen(true)
     } catch (err: unknown) {
       if (err instanceof Error) {
-         setError((err as { customMessage?: string }).customMessage || err.message)
+        setError((err as { customMessage?: string }).customMessage || err.message)
       } else {
-         setError("Failed to fetch user details.")
+        setError("Failed to fetch user details.")
       }
     } finally {
       setIsFetchingForView(null)
@@ -164,9 +164,9 @@ export function EmployeeList() {
       await fetchData()
     } catch (err: unknown) {
       if (err instanceof Error) {
-         setError((err as { customMessage?: string }).customMessage || err.message)
+        setError((err as { customMessage?: string }).customMessage || err.message)
       } else {
-         setError("Failed to delete user.")
+        setError("Failed to delete user.")
       }
     } finally {
       setIsDeleting(null)
@@ -228,22 +228,7 @@ export function EmployeeList() {
         },
         cell: ({ row }) => <div className="text-gray-800">{row.getValue("email")}</div>,
       },
-      {
-         accessorKey: "phoneNumber",
-         header: ({ column }) => {
-             return (
-                 <Button
-                 variant="ghost"
-                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                 className="px-0 font-bold hover:bg-transparent text-gray-800"
-                 >
-                 Mobile Number
-                 <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-                 </Button>
-             )
-         },
-         cell: ({ row }) => <div className="text-gray-800">{row.getValue("phoneNumber") || "N/A"}</div>,
-      },
+
       {
         accessorKey: "role",
         header: ({ column }) => {
@@ -259,42 +244,19 @@ export function EmployeeList() {
           )
         },
         cell: ({ row }) => {
-           const role = row.original.role
-           let roleName = 'User';
-           if (typeof role === 'string') {
-               const foundRole = roles.find((r) => r._id === role);
-               roleName = foundRole ? foundRole.name : role; // fallback to ID if not found
-           } else {
-               roleName = role?.name || 'User';
-           }
+          const role = row.original.role
+          let roleName = 'User';
+          if (typeof role === 'string') {
+            const foundRole = roles.find((r) => r._id === role);
+            roleName = foundRole ? foundRole.name : role; // fallback to ID if not found
+          } else {
+            roleName = role?.name || 'User';
+          }
 
-           return <Badge className="bg-[#198754] flex w-fit justify-center mx-auto hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-full">{roleName}</Badge>
+          return <Badge className="bg-[#198754] flex w-fit justify-center mx-auto hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-none">{roleName}</Badge>
         },
       },
-      {
-        accessorKey: "image",
-        header: ({ column }) => {
-            return (
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="px-0 font-bold hover:bg-transparent text-gray-800"
-              >
-                Image
-                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-              </Button>
-            )
-          },
-        cell: ({ row }) => {
-            const imageUrl = row.getValue("image") as string;
-            return (
-                <Avatar className="h-9 w-9 border border-gray-100 shadow-sm mx-auto">
-                   <AvatarImage src={imageUrl || ""} className="object-cover" />
-                   <AvatarFallback className="bg-muted text-xs font-medium">{row.original.fullName?.substring(0,2).toUpperCase() || 'US'}</AvatarFallback>
-                </Avatar>
-            )
-        }
-      },
+
       {
         accessorKey: "createdAt",
         header: ({ column }) => {
@@ -312,32 +274,32 @@ export function EmployeeList() {
           )
         },
         cell: ({ row }) => {
-            const dateStr = row.getValue("createdAt") as string;
-            if(!dateStr) return null;
-            const date = new Date(dateStr);
-            const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            return (
-               <div className="text-[13px] text-gray-700 font-medium">
-                  <div>{formattedDate}</div>
-               </div>
-            )
+          const dateStr = row.getValue("createdAt") as string;
+          if (!dateStr) return null;
+          const date = new Date(dateStr);
+          const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          return (
+            <div className="text-[13px] text-gray-700 font-medium">
+              <div>{formattedDate}</div>
+            </div>
+          )
         }
       },
 
       {
         id: "actions",
         header: ({ column }) => {
-            return (
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="px-0 font-bold hover:bg-transparent text-gray-800"
-              >
-                Action
-                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-              </Button>
-            )
-          },
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="px-0 font-bold hover:bg-transparent text-gray-800"
+            >
+              Action
+              <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+            </Button>
+          )
+        },
         cell: ({ row }) => {
           const user = row.original
           return (
@@ -376,14 +338,14 @@ export function EmployeeList() {
 
               {/* Delete */}
               <Button
-                 variant="ghost"
-                 size="icon"
-                 className="h-8 w-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
-                 title="Delete"
-                 onClick={() => handleDeleteClick(user)}
-                 disabled={isFetchingForView === user._id || isFetchingForEdit === user._id || isDeleting === user._id}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40"
+                title="Delete"
+                onClick={() => handleDeleteClick(user)}
+                disabled={isFetchingForView === user._id || isFetchingForEdit === user._id || isDeleting === user._id}
               >
-                 <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           )
@@ -397,7 +359,7 @@ export function EmployeeList() {
     <div className="space-y-4 p-4 md:p-6 bg-white dark:bg-sidebar min-h-[calc(100vh-80px)]">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b pb-4">
         <h2 className="text-xl font-bold text-gray-800">Employee list</h2>
-        <Button 
+        <Button
           onClick={handleAddClick}
           disabled={isFetchingForAdd}
           className="bg-[#198754] hover:bg-[#157347] text-white rounded-[3px] h-9 px-4 font-medium tracking-wide shadow-none"
@@ -426,7 +388,7 @@ export function EmployeeList() {
         </div>
       ) : (
         <div className="overflow-x-auto w-full">
-            <DataTable columns={columns} data={users} />
+          <DataTable columns={columns} data={users} />
         </div>
       )}
 
@@ -458,10 +420,10 @@ export function EmployeeList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={!!isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={confirmDelete}
-                disabled={!!isDeleting}
-                className="bg-red-600 hover:bg-red-700"
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={!!isDeleting}
+              className="bg-red-600 hover:bg-red-700"
             >
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete

@@ -247,19 +247,19 @@ export default function BreakingPostPage() {
                     <TableHeader className="bg-emerald-50 dark:bg-emerald-950/20">
                         <TableRow>
                             <TableHead className="w-[50px] font-bold text-emerald-900 dark:text-emerald-100">Sl</TableHead>
-                            <TableHead className="font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('title')}>
+                            <TableHead className="w-[300px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('title')}>
                                 <div className="flex items-center gap-1">
                                     Trending Post
                                     <ArrowUpDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
-                            <TableHead className="w-[180px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer" onClick={() => requestSort('createdAt' as keyof Article)}>
+                            <TableHead className="w-[200px] font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer pl-10" onClick={() => requestSort('createdAt' as keyof Article)}>
                                 <div className="flex items-center gap-1">
                                     Post Time
                                     <ArrowUpDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
-                            <TableHead className="font-bold text-emerald-900 dark:text-emerald-100">Status</TableHead>
+                            <TableHead className="font-bold text-emerald-900 dark:text-emerald-100 text-center">Status</TableHead>
                             <TableHead className="w-[100px] font-bold text-emerald-900 dark:text-emerald-100 text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -269,20 +269,22 @@ export default function BreakingPostPage() {
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 <TableRow key={post._id || (post as any).id || index} className="hover:bg-muted/50 dark:hover:bg-muted/10">
                                     <TableCell>{startIndex + index + 1}</TableCell>
-                                    <TableCell className="font-medium">
+                                    <TableCell className="font-medium max-w-[300px] truncate" title={post.title || post.headline || (post as any).headLine || (post as any).content || "N/A"}>
                                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {post.title || post.headline || (post as any).headLine || (post as any).content || "N/A"}
                                     </TableCell>
                                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                    <TableCell>{(post.createdAt || (post as any).time || (post as any).date) ? format(new Date(post.createdAt || (post as any).time || (post as any).date), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
+                                    <TableCell className="pl-10">{(post.createdAt || (post as any).time || (post as any).date) ? format(new Date(post.createdAt || (post as any).time || (post as any).date), "dd MMM yyyy, hh:mm a") : "N/A"}</TableCell>
                                     <TableCell>
-                                        <Badge
-                                            variant="default"
-                                            className="bg-emerald-500 hover:bg-emerald-600 cursor-pointer capitalize shadow-none transition-colors"
-                                            onClick={() => confirmUpdate(post._id as string)}
-                                        >
-                                            Trending
-                                        </Badge>
+                                        <div className="flex justify-center">
+                                            <Badge
+                                                variant="default"
+                                                className="bg-emerald-500 hover:bg-emerald-600 cursor-pointer capitalize shadow-none transition-colors rounded-none"
+                                                onClick={() => confirmUpdate(post._id as string)}
+                                            >
+                                                Trending
+                                            </Badge>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">

@@ -121,7 +121,7 @@ export function createColumns(
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: () => <div className="text-center">Status</div>,
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         if (!status) return <Badge variant="secondary">Unknown</Badge>;
@@ -131,16 +131,18 @@ export function createColumns(
           status === "published" ||
           status === "Active";
         return (
-          <Badge
-            className={`cursor-pointer ${
-              isPublish
-                ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600"
-                : "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600"
-            }`}
-            onClick={() => onStatusClick && onStatusClick(row.original)}
-          >
-            {status}
-          </Badge>
+          <div className="flex justify-center">
+            <Badge
+              className={`cursor-pointer rounded-none capitalize ${
+                isPublish
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600"
+                  : "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600"
+              }`}
+              onClick={() => onStatusClick && onStatusClick(row.original)}
+            >
+              {status}
+            </Badge>
+          </div>
         );
       },
     },
@@ -155,6 +157,18 @@ export function createColumns(
 
         return (
           <div className="flex items-center gap-2">
+            {/* View */}
+            <Link href={`/post/view/${id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-md dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+
             {/* Edit */}
             <Link href={`/post/edit/${id}`}>
               <Button
@@ -177,18 +191,6 @@ export function createColumns(
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-
-            {/* View */}
-            <Link href={`/post/view/${id}`}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-md dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
-                title="View"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         );
       },

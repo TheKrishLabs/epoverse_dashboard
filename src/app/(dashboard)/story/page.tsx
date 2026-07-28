@@ -340,25 +340,26 @@ export default function StoryManagePage() {
               <TableHeader className="bg-gray-100 dark:bg-muted/20">
                 <TableRow>
                   <TableHead className="w-[50px] font-bold">Sl</TableHead>
-                  <TableHead className="font-bold cursor-pointer" onClick={() => requestSort('title')}>
-                    <div className="flex items-center gap-1">
+                  <TableHead className="w-[24%] font-bold cursor-pointer text-left pl-24" onClick={() => requestSort('title')}>
+                    <div className="flex items-center justify-start gap-1">
                       Story Title
                       <ArrowUpDown className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="w-[180px] font-bold cursor-pointer" onClick={() => requestSort('date')}>
-                    <div className="flex items-center gap-1">
+                  <TableHead className="w-[24%] font-bold text-center pl-8">Image Count</TableHead>
+                  <TableHead className="w-[24%] font-bold cursor-pointer text-right" onClick={() => requestSort('date')}>
+                    <div className="flex items-center justify-end gap-1">
                       Date & Time
                       <ArrowUpDown className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="w-[140px] font-bold text-center">Action</TableHead>
+                  <TableHead className="w-[24%] font-bold text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Loading stories...
                     </TableCell>
                   </TableRow>
@@ -366,8 +367,9 @@ export default function StoryManagePage() {
                   paginatedStories.map((story, index) => (
                     <TableRow key={story.id} className="hover:bg-muted/50 dark:hover:bg-muted/10">
                       <TableCell>{startIndex + index + 1}</TableCell>
-                      <TableCell className="font-medium truncate max-w-[300px]" title={story.title}>{story.title}</TableCell>
-                      <TableCell>{format(new Date(story.date), "dd MMM yyyy, hh:mm a")}</TableCell>
+                      <TableCell className="w-[24%] font-medium truncate text-left pl-24" title={story.title}>{story.title}</TableCell>
+                      <TableCell className="text-center pl-8">{story.imageCount ?? 0}</TableCell>
+                      <TableCell className="text-right">{format(new Date(story.date), "dd MMM yyyy, hh:mm a")}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           <Button
@@ -402,7 +404,7 @@ export default function StoryManagePage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       No stories found.
                     </TableCell>
                   </TableRow>

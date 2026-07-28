@@ -441,18 +441,18 @@ export default function ArticleReportsPage() {
           </DialogHeader>
           {selectedReport && (
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Reason:</span>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Reason:</span>
                 <span className="col-span-3 text-sm text-red-600 font-medium capitalize">{selectedReport.reason || "N/A"}</span>
               </div>
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Reporter:</span>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Reporter:</span>
                 <span className="col-span-3 text-sm">
                   {selectedReport.reportedBy?.email || "Unknown"}
                 </span>
               </div>
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Article:</span>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Article:</span>
                 <span className="col-span-3 text-sm font-medium">
                   {(() => {
                     const articleTitle = (selectedReport as any).articleTitle || selectedReport.article?.headline || selectedReport.article?.title || selectedReport.article?.name;
@@ -471,12 +471,20 @@ export default function ArticleReportsPage() {
                   })()}
                 </span>
               </div>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Article Description:</span>
+                <span className="col-span-3 text-sm">
+                  {(selectedReport as any).shortDescription || selectedReport.article?.shortDescription || "N/A"}
+                </span>
+              </div>
               <hr className="my-2 border-muted" />
-              <div>
-                <span className="font-semibold text-sm block mb-2">Report Description:</span>
-                <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
-                  {selectedReport.description || "No description provided."}
-                </p>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Report Description:</span>
+                <div className="col-span-3">
+                  <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
+                    {selectedReport.description || "No description provided."}
+                  </p>
+                </div>
               </div>
               
               {selectedReport.article?.isReported !== false && (

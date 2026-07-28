@@ -236,70 +236,32 @@ export function SubscriberList() {
            )
         },
       },
-      {
-        accessorKey: "createdAt",
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="px-0 font-bold hover:bg-transparent text-gray-800 h-auto py-2 flex flex-col items-start gap-1"
-            >
-              <div className="flex items-center">
-                <span>Joined Date</span>
-                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-              </div>
-            </Button>
-          )
-        },
-        cell: ({ row }) => {
-            const dateStr = row.getValue("createdAt") as string;
-            if(!dateStr) return null;
-            const date = new Date(dateStr);
-            const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            return (
-               <div className="flex items-center gap-2 text-[14px] text-gray-700 font-medium">
-                  <CalendarDays className="h-4 w-4 text-gray-400" />
-                  <span>{formattedDate}</span>
-               </div>
-            )
-        }
-      },
+
       {
         accessorKey: "status",
         header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              className="px-0 font-bold hover:bg-transparent text-gray-800"
-            >
-              Status
-              <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-            </Button>
-          )
+            <div className="flex justify-center w-full">
+              <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                className="px-0 font-bold hover:bg-transparent text-gray-800"
+              >
+                Status
+                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+              </Button>
+            </div>
         },
         cell: ({ row }) => {
             const status = row.getValue("status") as string;
             const isActive = status?.toLowerCase() === 'active';
             
             return (
-                <div className="flex items-center">
+                <div className="flex items-center justify-center">
                   <Badge 
-                     className={isActive ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200 font-semibold flex items-center justify-center text-[12px] px-3 py-1 rounded-full shadow-none cursor-pointer" : "bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-200 font-semibold flex items-center justify-center text-[12px] px-3 py-1 rounded-full shadow-none cursor-pointer"}
+                     className={isActive ? "bg-emerald-500 text-white hover:bg-emerald-600 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-none cursor-pointer" : "bg-red-500 text-white hover:bg-red-600 font-semibold flex items-center justify-center text-[11px] px-2.5 py-0.5 rounded-none cursor-pointer"}
                      onClick={() => handleToggleStatusClick(row.original)}
                   >
-                     {isActive ? (
-                        <>
-                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                           {status}
-                        </>
-                     ) : (
-                        <>
-                           <span className="h-1.5 w-1.5 rounded-full bg-gray-400 mr-2"></span>
-                           {status}
-                        </>
-                     )}
+                     {isActive ? "Active" : "inActive"}
                   </Badge>
                 </div>
             )

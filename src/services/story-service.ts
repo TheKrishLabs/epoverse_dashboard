@@ -7,6 +7,7 @@ export interface StoryData {
   title: string;
   views: number | string;
   date: string;
+  imageCount?: number;
   items?: StoryItemData[];
   [key: string]: any;
 }
@@ -47,6 +48,7 @@ export const storyService = {
         title: item.title || item.headline || item.storyName || 'Untitled Story',
         views: Number(item.views || item.hitCount || 0),
         date: item.createdAt || item.date || new Date().toISOString(),
+        imageCount: item.imageCount || 0,
       }));
     } catch (error) {
       console.error("Failed to fetch stories", error);

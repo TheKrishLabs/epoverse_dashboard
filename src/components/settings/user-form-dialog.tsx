@@ -168,25 +168,21 @@ export function UserFormDialog({
                     </FormItem>
                   )}
                 />
-                {!user && (
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} disabled={isLoading} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} disabled={isLoading || !!user} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             </div>
 
-            {!user && (
-              <>
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -194,9 +190,7 @@ export function UserFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="1234567890" {...field} disabled={isLoading} />
-                          </FormControl>
+                            <Input placeholder="1234567890" {...field} disabled={isLoading || !!user} />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -204,9 +198,19 @@ export function UserFormDialog({
                      <FormField
                       control={form.control}
                       name="role"
-                      render={({ field }) => (
+                      render={({ field }) => {
+                        const displayRole = user 
+                          ? (typeof user.role === 'string' ? (roles.find(r => r._id === user.role)?.name || user.role) : (user.role?.name || 'User')) 
+                          : field.value;
+                        
+                        return (
                         <FormItem>
-                          <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
+                          <FormLabel>Role</FormLabel>
+                          {user ? (
+                            <FormControl>
+                              <Input disabled value={displayRole} />
+                            </FormControl>
+                          ) : (
                           <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -219,14 +223,15 @@ export function UserFormDialog({
                               ))}
                             </SelectContent>
                           </Select>
+                          )}
                           <FormMessage />
                         </FormItem>
-                      )}
+                      )}}
                     />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
-                    <FormField
+                    {!user && (
+                      <FormField
                       control={form.control}
                       name="password"
                       render={({ field }) => (
@@ -239,13 +244,14 @@ export function UserFormDialog({
                         </FormItem>
                       )}
                     />
+                    )}
                      <FormField
                       control={form.control}
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
-                          <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>Status</FormLabel>
+                          <Select disabled={isLoading || !!user} onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
@@ -260,26 +266,36 @@ export function UserFormDialog({
                         </FormItem>
                       )}
                     />
+                    {user && (
+                      <FormItem>
+                        <FormLabel>Created At</FormLabel>
+                        <FormControl>
+                          <Input 
+                             value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'} 
+                             disabled 
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
                 </div>
 
-                <FormItem>
-                    <FormLabel>Profile Image</FormLabel>
-                    <FormControl>
-                         <Input 
-                            type="file" 
-                            accept="image/*"
-                            disabled={isLoading} 
-                            onChange={(e) => {
-                                if (e.target.files && e.target.files.length > 0) {
-                                    setImageFile(e.target.files[0])
-                                }
-                            }}
-                         />
-                    </FormControl>
-                </FormItem>
-              </>
-            )}
-
+                {!user && (
+                  <FormItem>
+                      <FormLabel>Profile Image</FormLabel>
+                      <FormControl>
+                           <Input 
+                              type="file" 
+                              accept="image/*"
+                              disabled={isLoading} 
+                              onChange={(e) => {
+                                  if (e.target.files && e.target.files.length > 0) {
+                                      setImageFile(e.target.files[0])
+                                  }
+                              }}
+                           />
+                      </FormControl>
+                  </FormItem>
+                )}
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"

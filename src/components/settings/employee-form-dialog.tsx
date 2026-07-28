@@ -253,7 +253,7 @@ export function EmployeeFormDialog({
                 />
             </div>
 
-            {!user && (
+            {/* !user && (
               <FormItem>
                   <FormLabel>Profile Image</FormLabel>
                   <FormControl>
@@ -269,7 +269,7 @@ export function EmployeeFormDialog({
                        />
                   </FormControl>
               </FormItem>
-            )}
+            ) */}
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button

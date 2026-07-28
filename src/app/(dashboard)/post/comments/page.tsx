@@ -515,12 +515,12 @@ export default function PostCommentsPage() {
           </DialogHeader>
           {selectedComment && (
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">User:</span>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">User:</span>
                 <span className="col-span-3 text-sm">{selectedComment.userName || selectedComment.user?.fullName || selectedComment.user?.name || selectedComment.author?.name || "Unknown"} ({selectedComment.userEmail || selectedComment.user?.email || selectedComment.author?.email || "No email"})</span>
               </div>
-              <div className="grid grid-cols-4 gap-2 items-center">
-                <span className="font-semibold text-sm text-right">Post:</span>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Post:</span>
                 <span className="col-span-3 text-sm">
                   {(() => {
                     const postId = selectedComment.articleId?._id || selectedComment.articleId?.id || selectedComment.articleId || selectedComment.post?._id || selectedComment.post?.id || selectedComment.postId || selectedComment.article?._id || selectedComment.article?.id;
@@ -543,11 +543,13 @@ export default function PostCommentsPage() {
               </div>
 
               <hr className="my-2 border-muted" />
-              <div>
-                <span className="font-semibold text-sm block mb-2">Comment Message:</span>
-                <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap">
-                  {selectedComment.comment || selectedComment.message || selectedComment.content || selectedComment.text || "No content"}
-                </p>
+              <div className="grid grid-cols-4 gap-2 items-start">
+                <span className="font-semibold text-sm text-left">Comment Message:</span>
+                <div className="col-span-3">
+                  <p className="text-sm bg-muted p-3 rounded-md min-h-[60px] whitespace-pre-wrap mt-0">
+                    {selectedComment.comment || selectedComment.message || selectedComment.content || selectedComment.text || "No content"}
+                  </p>
+                </div>
               </div>
               
               {selectedComment.isReported && (
@@ -567,13 +569,15 @@ export default function PostCommentsPage() {
                 </div>
               )}
               {(selectedComment.reportedReason || selectedComment.reportedMessages) && (
-                <div>
-                  <span className="font-semibold text-sm block mb-2 text-red-600">Reported Details:</span>
-                  <p className="text-sm bg-red-50 text-red-800 p-3 rounded-md">
-                    {selectedComment.reportedReason && <strong>Reason: </strong>} {selectedComment.reportedReason}
-                    {selectedComment.reportedReason && selectedComment.reportedMessages && <br/>}
-                    {selectedComment.reportedMessages && <strong>Message: </strong>} {selectedComment.reportedMessages}
-                  </p>
+                <div className="grid grid-cols-4 gap-2 items-start mt-4">
+                  <span className="font-semibold text-sm text-left text-red-600">Reported Details:</span>
+                  <div className="col-span-3">
+                    <p className="text-sm bg-red-50 text-red-800 p-3 rounded-md mt-0">
+                      {selectedComment.reportedReason && <strong>Reason: </strong>} {selectedComment.reportedReason}
+                      {selectedComment.reportedReason && selectedComment.reportedMessages && <br/>}
+                      {selectedComment.reportedMessages && <strong>Message: </strong>} {selectedComment.reportedMessages}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

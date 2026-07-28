@@ -46,26 +46,26 @@ export function EmployeeProfileDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-4 gap-4 py-4">
-          <div className="col-span-1 font-semibold text-sm text-right">Full Name:</div>
+          <div className="col-span-1 font-semibold text-sm text-left">Full Name:</div>
           <div className="col-span-3 text-sm">{user.fullName}</div>
           
-          <div className="col-span-1 font-semibold text-sm text-right">Email:</div>
+          <div className="col-span-1 font-semibold text-sm text-left">Email:</div>
           <div className="col-span-3 text-sm">{user.email || "N/A"}</div>
           
-          <div className="col-span-1 font-semibold text-sm text-right">Phone:</div>
+          <div className="col-span-1 font-semibold text-sm text-left">Phone:</div>
           <div className="col-span-3 text-sm">{user.phoneNumber || "N/A"}</div>
 
 
-          <div className="col-span-1 font-semibold text-sm text-right">Role:</div>
+          <div className="col-span-1 font-semibold text-sm text-left">Role:</div>
           <div className="col-span-3 text-sm">
-            <Badge className="bg-[#198754] hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-full">
+            <Badge className="bg-[#198754] hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-none">
               {roleName}
             </Badge>
           </div>
           
-          <div className="col-span-1 font-semibold text-sm text-right">Status:</div>
+          <div className="col-span-1 font-semibold text-sm text-left">Status:</div>
           <div className="col-span-3 text-sm">
-            <Badge className={status === "Active" ? "bg-[#198754] hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-full" : "bg-red-500 hover:bg-red-600 font-semibold text-[11px] px-2.5 py-0.5 rounded-full"}>
+            <Badge className={status === "Active" ? "bg-[#198754] hover:bg-[#157347] font-semibold text-[11px] px-2.5 py-0.5 rounded-none" : "bg-red-500 hover:bg-red-600 font-semibold text-[11px] px-2.5 py-0.5 rounded-none"}>
               {status}
             </Badge>
           </div>
