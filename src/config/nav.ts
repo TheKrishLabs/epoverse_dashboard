@@ -286,7 +286,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         items: [
           {
             title: "Employee List",
-            href: "/settings/users",
+            href: "/settings/employees",
             icon: Users,
             variant: "ghost",
           },

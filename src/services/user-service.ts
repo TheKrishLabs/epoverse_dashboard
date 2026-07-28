@@ -10,6 +10,7 @@ export interface User {
   image?: string;
   createdAt?: string;
   updatedAt?: string;
+  userType?: string;
 }
 
 export interface UserResponse {
@@ -39,23 +40,27 @@ export const userService = {
     }
   },
 
+
   /**
    * Fetch a single user by ID
    */
   getUserById: async (id: string): Promise<User> => {
     try {
-      const response = await api.get<{ data?: User } | User>(`/users/${id}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await api.get<any>(`/users/${id}`);
 
       // Handle potential wrapped response structures
-      if (response && 'data' in response && response.data) {
-        return response.data;
-      }
+      if (response?.data?.user) return response.data.user;
+      if (response?.user) return response.user;
+      if (response?.data) return response.data;
+      
       return response as User;
     } catch (error) {
       console.error(`Error fetching user ${id}:`, error);
       throw error;
     }
   },
+
 
   /**
    * Create a new user by Admin
@@ -77,13 +82,15 @@ export const userService = {
   updateUser: async (id: string, payload: Record<string, unknown> | FormData): Promise<UserResponse> => {
     try {
       console.log(`--- Submitting User Update Payload for ${id} ---`, payload);
-      const response = await api.put<UserResponse>(`/users/${id}/update`, payload);
+      const patchPayload = { fullName: (payload as Record<string, unknown>).fullName };
+      const response = await api.patch<UserResponse>(`/users/${id}/update-name`, patchPayload);
       return response;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);
       throw error;
     }
   },
+
 
   /**
    * Delete a user
@@ -103,7 +110,8 @@ export const userService = {
    */
   updateStatus: async (id: string, status: 'Active' | 'Inactive'): Promise<UserResponse> => {
     try {
-      const response = await api.put<UserResponse>(`/users/${id}/status`, { status });
+      const mappedStatus = status === 'Active' ? 'active' : 'inActive';
+      const response = await api.patch<UserResponse>(`/users/${id}/user-status`, { status: mappedStatus });
       return response;
     } catch (error) {
       console.error(`Error updating user status ${id}:`, error);
