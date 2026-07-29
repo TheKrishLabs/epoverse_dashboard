@@ -240,16 +240,16 @@ export function SubscriberList() {
       {
         accessorKey: "status",
         header: ({ column }) => {
-            <div className="flex justify-center w-full">
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                className="px-0 font-bold hover:bg-transparent text-gray-800"
-              >
-                Status
-                <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
-              </Button>
-            </div>
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="px-0 font-bold hover:bg-transparent text-gray-800"
+            >
+              Status
+              <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+            </Button>
+          )
         },
         cell: ({ row }) => {
             const status = row.getValue("status") as string;
