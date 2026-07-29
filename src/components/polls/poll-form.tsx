@@ -50,7 +50,8 @@ export function PollForm({ initialData, isEditing = false }: PollFormProps) {
     const [language, setLanguage] = useState(initialData?.language || "")
     const [question, setQuestion] = useState(initialData?.question || "")
     const [votePermission, setVotePermission] = useState<'all' | 'registered'>(initialData?.votePermission || 'all')
-    const [status, setStatus] = useState<'Active' | 'Inactive'>(initialData?.status || "Active")
+    const initialStatus = initialData ? (initialData.isActive !== undefined ? (initialData.isActive ? 'Active' : 'Inactive') : (initialData.status || 'Active')) : 'Active'
+    const [status, setStatus] = useState<'Active' | 'Inactive'>(initialStatus as 'Active' | 'Inactive')
     const [options, setOptions] = useState<PollOption[]>(
         initialData?.options?.length ? initialData.options : [{ text: '', votes: 0 }, { text: '', votes: 0 }]
     )
@@ -126,7 +127,14 @@ export function PollForm({ initialData, isEditing = false }: PollFormProps) {
             }
 
             if (isEditing && initialData && (initialData.id || initialData._id)) {
-                await pollService.updatePoll((initialData.id || initialData._id) as string, serviceData)
+                const pollId = (initialData.id || initialData._id) as string;
+                await pollService.updatePoll(pollId, serviceData)
+                
+                // If status changed during edit, explicitly call the toggle API
+                if (status !== initialStatus) {
+                    await pollService.togglePollStatus(pollId);
+                }
+                
                 alert("Poll updated successfully!")
             } else {
                 await pollService.createPoll(serviceData)

@@ -22,64 +22,74 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function BulkUploadPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+    const selectedFiles = Array.from(e.target.files || []);
     setError(null);
     setSuccess(null);
 
-    if (selectedFile) {
-        if (!selectedFile.name.endsWith('.csv')) {
-             setError("Please select a valid CSV file.");
-             setFile(null);
-             return;
-        }
-        if (selectedFile.size > 5 * 1024 * 1024) { // 5MB
-             setError("File size exceeds 5MB limit.");
-             setFile(null);
-             return;
-        }
-        setFile(selectedFile);
+    const validFiles = selectedFiles.filter(f => {
+       if (!f.name.endsWith('.csv') && !f.name.endsWith('.txt')) {
+           setError("Some files were rejected. Please select valid .csv or .txt files.");
+           return false;
+       }
+       if (f.size > 5 * 1024 * 1024) { // 5MB
+           setError("Some files exceed 5MB limit and were rejected.");
+           return false;
+       }
+       return true;
+    });
+
+    if (validFiles.length > 0) {
+        setFiles(prev => [...prev, ...validFiles]);
     }
+    
+    // Clear input so same files can be selected again if removed
+    e.target.value = '';
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
+  const handleRemoveFile = (indexToRemove: number) => {
+    setFiles(prev => prev.filter((_, index) => index !== indexToRemove));
     setError(null);
     setSuccess(null);
-    // Reset file input value if needed (requires ref, skipping for simplicity in this iteration)
-    const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
 
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-        const response = await postService.uploadBulkArticles(file);
+        const uploadPromises = files.map(f => postService.uploadBulkArticles(f));
+        const results = await Promise.allSettled(uploadPromises);
         
-        // Parse meaningful message natively out of the API if provided, or default it
-        const successMsg = response.message || response.data?.message || `Successfully processed ${file.name}.`;
-        
-        setSuccess(successMsg);
-        setFile(null);
-        
-        const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
+        const successes = results.filter(r => r.status === 'fulfilled');
+        const failures = results.filter(r => r.status === 'rejected');
+
+        if (failures.length === 0) {
+             setSuccess(`Successfully processed all ${successes.length} documents.`);
+             setFiles([]);
+        } else if (successes.length > 0) {
+             setSuccess(`Successfully processed ${successes.length} documents.`);
+             setError(`Failed to process ${failures.length} documents.`);
+             // Remove successful ones
+             const failedFiles = files.filter((_, i) => results[i].status === 'rejected');
+             setFiles(failedFiles);
+        } else {
+             const firstError = failures[0].reason;
+             const errMsg = firstError?.response?.data?.message || firstError?.response?.data?.error || firstError?.message || "Failed to process documents. Please check expected format.";
+             setError(errMsg);
+        }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-        // Attempt to parse validation errors directly pushed by the backend
-        const errMsg = err.response?.data?.message || err.response?.data?.error || "Failed to process CSV file. Please check expected format.";
-        setError(errMsg);
+        setError(err?.response?.data?.message || err?.message || "An unexpected error occurred during upload.");
     } finally {
         setIsLoading(false);
     }
@@ -124,22 +134,26 @@ export default function BulkUploadPage() {
           </CardHeader>
           <CardContent className="space-y-4">
              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="csv-upload">CSV File</Label>
+                <Label htmlFor="csv-upload">Documents (CSV/TXT)</Label>
                 <div className="flex gap-2 items-center">
-                    <Input id="csv-upload" type="file" accept=".csv" onChange={handleFileChange} className="cursor-pointer" disabled={isLoading} />
+                    <Input id="csv-upload" type="file" multiple accept=".csv, .txt" onChange={handleFileChange} className="cursor-pointer" disabled={isLoading} />
                 </div>
              </div>
 
-             {file && (
-                 <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
-                     <div className="flex items-center gap-2 overflow-hidden">
-                         <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                         <span className="text-sm font-medium truncate">{file.name}</span>
-                         <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(2)} KB)</span>
-                     </div>
-                     <Button variant="ghost" size="icon" onClick={handleRemoveFile} disabled={isLoading} className="h-8 w-8 hover:text-destructive">
-                         <X className="h-4 w-4" />
-                     </Button>
+             {files.length > 0 && (
+                 <div className="space-y-2 max-h-48 overflow-y-auto">
+                     {files.map((f, index) => (
+                         <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                             <div className="flex items-center gap-2 overflow-hidden">
+                                 <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                                 <span className="text-sm font-medium truncate">{f.name}</span>
+                                 <span className="text-xs text-muted-foreground">({(f.size / 1024).toFixed(2)} KB)</span>
+                             </div>
+                             <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(index)} disabled={isLoading} className="h-8 w-8 hover:text-destructive">
+                                 <X className="h-4 w-4" />
+                             </Button>
+                         </div>
+                     ))}
                  </div>
              )}
 
@@ -162,7 +176,7 @@ export default function BulkUploadPage() {
              <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800" 
                 onClick={handleUpload} 
-                disabled={!file || isLoading}
+                disabled={files.length === 0 || isLoading}
              >
                 {isLoading ? (
                     <>
@@ -172,7 +186,7 @@ export default function BulkUploadPage() {
                 ) : (
                     <>
                          <Upload className="mr-2 h-4 w-4" />
-                         Upload CSV
+                         Upload {files.length > 1 ? `${files.length} Documents` : "Document"}
                     </>
                 )}
              </Button>

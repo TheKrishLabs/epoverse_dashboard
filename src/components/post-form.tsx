@@ -183,10 +183,10 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const d = initialData as any;
         return {
-            latest: d?.isLatest || d?.settings?.latest || false,
-            trending: d?.isTrending || d?.settings?.trending || false,
+            latest: d?.isLatest || d?.latest || d?.settings?.latest || false,
+            trending: d?.isTrending || d?.trending || d?.settings?.trending || false,
             recommended: d?.settings?.recommended || false,
-            publish: d?.status === "published" || d?.status === "Publish" || d?.settings?.publish || false,
+            publish: d?.status?.toLowerCase() === "published" || d?.status?.toLowerCase() === "active" || d?.settings?.publish || false,
         };
     });
     
@@ -341,6 +341,7 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
             if (seo.description) formData.append("metaDescription", seo.description);
             formData.append("isLatest", String(settings.latest));
             formData.append("isTrending", String(settings.trending));
+            formData.append("trending", String(settings.trending));
             
             // Tags and Meta Keywords
             if (keywordList.length > 0) {
@@ -827,8 +828,8 @@ export function PostForm({ initialData, isEditing = false }: PostFormProps) {
                 <Button 
                     onClick={handleSubmit} 
                     disabled={isSaving} 
-                    className="w-full sm:w-auto bg-zinc-950 text-zinc-50 hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-955 dark:hover:bg-zinc-200 font-semibold px-8 shadow-sm flex items-center justify-center gap-2"
-                >
+                    variant="outline"
+className="w-full sm:w-auto bg-white border-zinc-300 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-900 font-semibold px-8 shadow-sm flex items-center justify-center gap-2">
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                     {isSaving ? "Saving Post..." : (isEditing ? "Update Post" : "Save Post")}
                 </Button>

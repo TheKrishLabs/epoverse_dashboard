@@ -12,7 +12,8 @@ import { format } from "date-fns";
 
 /** Factory — call this to get columns with delete wired up */
 export function createColumns(
-  onDelete: (id: string, title: string) => void
+  onDelete: (id: string, title: string) => void,
+  onStatusClick?: (article: Article) => void
 ): ColumnDef<Article>[] {
   return [
     {
@@ -82,14 +83,45 @@ export function createColumns(
         </Button>
       ),
       cell: ({ row }) => {
-        const dateStr = row.getValue("createdAt") as string;
-        if (!dateStr) return <span>N/A</span>;
-        return <span>{format(new Date(dateStr), "MMM dd, yyyy")}</span>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const article = row.original as any;
+        const dateStr = article.createdAt || article.created_at || article.publishDate || article.date || article.releaseDate || article.postDate || article.updatedAt;
+        
+        let d: Date | null = null;
+        
+        if (dateStr) {
+          d = new Date(dateStr);
+        } else if (article._id && typeof article._id === 'string' && article._id.length === 24) {
+          // Fallback to extracting creation date from MongoDB ObjectId
+          const timestamp = parseInt(article._id.substring(0, 8), 16) * 1000;
+          d = new Date(timestamp);
+        } else if (article.id && typeof article.id === 'string' && article.id.length === 24) {
+          const timestamp = parseInt(article.id.substring(0, 8), 16) * 1000;
+          d = new Date(timestamp);
+        }
+        
+        if (!d || isNaN(d.getTime())) return <span>-</span>;
+        
+        return <span>{format(d, "MMM dd, yyyy")}</span>;
+      },
+    },
+    {
+      accessorKey: "isReported",
+      header: "Reported",
+      cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const article = row.original as any;
+        const isReported = article.isReported === true;
+        return isReported ? (
+          <span className="font-medium text-amber-600 dark:text-amber-400">True</span>
+        ) : (
+          <span className="font-medium text-green-600 dark:text-green-400">False</span>
+        );
       },
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: () => <div className="text-center">Status</div>,
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         if (!status) return <Badge variant="secondary">Unknown</Badge>;
@@ -99,15 +131,18 @@ export function createColumns(
           status === "published" ||
           status === "Active";
         return (
-          <Badge
-            className={
-              isPublish
-                ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600"
-                : "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600"
-            }
-          >
-            {status}
-          </Badge>
+          <div className="flex justify-center">
+            <Badge
+              className={`cursor-pointer rounded-none capitalize ${
+                isPublish
+                  ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600"
+                  : "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600"
+              }`}
+              onClick={() => onStatusClick && onStatusClick(row.original)}
+            >
+              {status}
+            </Badge>
+          </div>
         );
       },
     },
@@ -122,6 +157,18 @@ export function createColumns(
 
         return (
           <div className="flex items-center gap-2">
+            {/* View */}
+            <Link href={`/post/view/${id}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-md dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </Link>
+
             {/* Edit */}
             <Link href={`/post/edit/${id}`}>
               <Button
@@ -144,18 +191,6 @@ export function createColumns(
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-
-            {/* View */}
-            <Link href={`/post/view/${id}`}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-md dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
-                title="View"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         );
       },

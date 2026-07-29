@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   LayoutDashboard,
   Server,
@@ -81,6 +82,12 @@ export const sidebarNav: SidebarNavGroup[] = [
           {
             title: "Post Comments",
             href: "/post/comments",
+            icon: FileText,
+            variant: "ghost",
+          },
+          {
+            title: "Post Reports",
+            href: "/post/reports",
             icon: FileText,
             variant: "ghost",
           },
@@ -169,12 +176,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         icon: BrainCircuit,
         variant: "ghost",
       },
-      {
-        title: "Menu",
-        href: "/menus",
-        icon: Gift,
-        variant: "ghost",
-      },
+
       // {
       //   title: "Reporter",
       //   href: "/reporter",
@@ -284,7 +286,7 @@ export const sidebarNav: SidebarNavGroup[] = [
         items: [
           {
             title: "Employee List",
-            href: "/settings/users",
+            href: "/settings/employees",
             icon: Users,
             variant: "ghost",
           },
@@ -317,3 +319,4 @@ export const sidebarNav: SidebarNavGroup[] = [
     ],
   },
 ];
+

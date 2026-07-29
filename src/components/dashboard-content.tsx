@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { dashboardService, DashboardResponse } from "@/services/dashboard-service";
-import { DashboardStats } from "@/components/dashboard-stats";
+import { PrimaryDashboardStats, SecondaryDashboardStats } from "@/components/dashboard-stats";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { LatestArticles } from "@/components/dashboard/latest-articles";
 
@@ -19,7 +19,6 @@ export function DashboardContent() {
       try {
         setIsLoading(true);
         const res = await dashboardService.getAdminDashboard();
-        console.log("DEBUG: Dashboard Payload:", res);
         if (res) {
             setData(res);
         }
@@ -53,19 +52,45 @@ export function DashboardContent() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-4" />
-        <p className="text-muted-foreground font-medium animate-pulse">Loading core metrics...</p>
+      <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+        {/* Primary Stats Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-[140px] w-full rounded-2xl" />
+          ))}
+        </div>
+        
+        {/* Main Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <Skeleton className="h-[400px] w-full rounded-2xl" />
+          </div>
+          <div className="lg:col-span-4 flex flex-col gap-4">
+             {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-[80px] w-full rounded-2xl" />
+             ))}
+          </div>
+        </div>
+
+        {/* Latest Articles Skeleton */}
+        <Skeleton className="h-[300px] w-full rounded-2xl mt-2" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full">
-      <DashboardStats dashboardData={data} />
-      <div className="z-10 w-full flex flex-col gap-8">
-        <ChartAreaInteractive dashboardData={data} />
+    <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <PrimaryDashboardStats dashboardData={data} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 h-full">
+          <ChartAreaInteractive dashboardData={data} />
+        </div>
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          <SecondaryDashboardStats dashboardData={data} />
+        </div>
       </div>
+      
       <div className="w-full">
         <LatestArticles />
       </div>

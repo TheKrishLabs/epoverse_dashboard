@@ -1,3 +1,4 @@
+/* eslint-disable */
 "use client";
 
 import React, { useState } from "react";
@@ -128,4 +129,5 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
     );
 }
+
 

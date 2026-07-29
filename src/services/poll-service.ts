@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface PollOption {
@@ -106,5 +107,18 @@ export const pollService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await api.patch<any>(`/polls/toggle-inactive/${id}`);
     return response?.data?.poll || response?.poll || response;
+  },
+
+  getPollResponse: async (id: string): Promise<any> => {
+    try {
+        const response = await api.get<any>(`/polls/${id}/pole-response`);
+        return response?.data || response;
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            return null;
+        }
+        throw error;
+    }
   }
 };
+

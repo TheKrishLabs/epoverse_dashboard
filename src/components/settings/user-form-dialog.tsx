@@ -96,23 +96,32 @@ export function UserFormDialog({
   const handleSubmit = async (data: UserFormValues) => {
     setIsLoading(true)
     try {
-      const payload: Record<string, unknown> = {
-        fullName: data.fullName,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
-        role: data.role,
-        status: data.status,
-      }
+      let payload: Record<string, unknown> = {}
       
-      // Always append userType as admin for this specific dashboard portal
-      payload.userType = "employee"
-      
-      if (data.password) {
-        payload.password = data.password
-      } else if (!user) {
-        form.setError("password", { message: "Password is required for new users" })
-        setIsLoading(false)
-        return
+      if (user) {
+        // Only update fullName in UserList per requirements
+        payload = {
+          fullName: data.fullName,
+        }
+      } else {
+        payload = {
+          fullName: data.fullName,
+          email: data.email,
+          phoneNumber: data.phoneNumber,
+          role: data.role,
+          status: data.status,
+        }
+        
+        // Always append userType as employee for new users if required
+        payload.userType = "user" 
+        
+        if (data.password) {
+          payload.password = data.password
+        } else {
+          form.setError("password", { message: "Password is required for new users" })
+          setIsLoading(false)
+          return
+        }
       }
 
       await onSubmit(payload)
@@ -145,7 +154,7 @@ export function UserFormDialog({
                </div>
             )}
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className={user ? "space-y-4" : "grid grid-cols-2 gap-4"}>
                <FormField
                   control={form.control}
                   name="fullName"
@@ -159,14 +168,14 @@ export function UserFormDialog({
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} disabled={isLoading} />
+                        <Input type="email" placeholder="john@example.com" {...field} disabled={isLoading || !!user} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,100 +183,119 @@ export function UserFormDialog({
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="1234567890" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
-                      <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                            <Input placeholder="1234567890" {...field} disabled={isLoading || !!user} />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => {
+                        const displayRole = user 
+                          ? (typeof user.role === 'string' ? (roles.find(r => r._id === user.role)?.name || user.role) : (user.role?.name || 'User')) 
+                          : field.value;
+                        
+                        return (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          {user ? (
+                            <FormControl>
+                              <Input disabled value={displayRole} />
+                            </FormControl>
+                          ) : (
+                          <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent side="top">
+                              {roles.map(r => (
+                                  <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    {!user && (
+                      <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password <span className="text-red-500">*</span></FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="*****" {...field} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    )}
+                     <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select disabled={isLoading || !!user} onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent side="top">
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inActive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {user && (
+                      <FormItem>
+                        <FormLabel>Created At</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
+                          <Input 
+                             value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'} 
+                             disabled 
+                          />
                         </FormControl>
-                        <SelectContent side="top">
-                          {roles.map(r => (
-                              <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
+                      </FormItem>
+                    )}
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password {user ? "" : <span className="text-red-500">*</span>}</FormLabel>
+                {!user && (
+                  <FormItem>
+                      <FormLabel>Profile Image</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder={user ? "Leave blank to keep current" : "*****"} {...field} disabled={isLoading} />
+                           <Input 
+                              type="file" 
+                              accept="image/*"
+                              disabled={isLoading} 
+                              onChange={(e) => {
+                                  if (e.target.files && e.target.files.length > 0) {
+                                      setImageFile(e.target.files[0])
+                                  }
+                              }}
+                           />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
-                      <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent side="top">
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inActive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
-
-            <FormItem>
-                <FormLabel>Profile Image</FormLabel>
-                <FormControl>
-                     <Input 
-                        type="file" 
-                        accept="image/*"
-                        disabled={isLoading} 
-                        onChange={(e) => {
-                            if (e.target.files && e.target.files.length > 0) {
-                                setImageFile(e.target.files[0])
-                            }
-                        }}
-                     />
-                </FormControl>
-                {user?.image && !imageFile && (
-                    <div className="text-xs text-muted-foreground mt-1">Current image exists. Upload new to replace.</div>
+                  </FormItem>
                 )}
-            </FormItem>
-
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"

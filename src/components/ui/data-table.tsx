@@ -73,6 +73,26 @@ export function DataTable<TData, TValue>({
     },
   })
 
+  const getPageNumbers = () => {
+    const pageCount = table.getPageCount();
+    const currentPage = table.getState().pagination.pageIndex;
+    const maxPagesToShow = 5;
+
+    if (pageCount <= maxPagesToShow) {
+      return Array.from({ length: pageCount }, (_, i) => i);
+    }
+
+    const pages: (number | string)[] = [];
+    if (currentPage <= 2) {
+      pages.push(0, 1, 2, 3, 'ellipsis-1', pageCount - 1);
+    } else if (currentPage >= pageCount - 3) {
+      pages.push(0, 'ellipsis-1', pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1);
+    } else {
+      pages.push(0, 'ellipsis-1', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-2', pageCount - 1);
+    }
+    return pages;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -165,34 +185,38 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="text-sm text-gray-600">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 w-full">
+        <div className="text-sm text-gray-600 whitespace-nowrap shrink-0">
              Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to {Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of {table.getFilteredRowModel().rows.length} entries
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 min-w-0 overflow-hidden max-w-full">
           <Button
             variant="outline"
-            className="h-9 px-3 text-sm font-medium border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50"
+            className="h-9 px-3 text-sm font-medium border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50 shrink-0"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             Previous
           </Button>
-           <div className="flex items-center space-x-1">
-             {Array.from({ length: table.getPageCount() }, (_, i) => (
+           <div className="flex items-center space-x-1 overflow-x-auto min-w-0 px-1 pb-1 sm:pb-0" style={{ scrollbarWidth: "thin" }}>
+             {getPageNumbers().map((pageNumber, i) => (
+               typeof pageNumber === 'string' ? (
+                 <div key={`ellipsis-${i}`} className="px-2 text-gray-500">...</div>
+               ) : (
                   <Button
-                    key={i}
-                     variant={table.getState().pagination.pageIndex === i ? "default" : "outline"}
-                     className={`h-9 w-9 p-0 text-sm font-medium rounded-[3px] shadow-none ${table.getState().pagination.pageIndex === i ? "bg-[#198754] hover:bg-[#157347] text-white border-[#198754]" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"}`}
-                     onClick={() => table.setPageIndex(i)}
+                    key={pageNumber}
+                     variant={table.getState().pagination.pageIndex === pageNumber ? "default" : "outline"}
+                     className={`h-9 w-9 p-0 text-sm font-medium rounded-[3px] shadow-none shrink-0 ${table.getState().pagination.pageIndex === pageNumber ? "bg-[#198754] hover:bg-[#157347] text-white border-[#198754]" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"}`}
+                     onClick={() => table.setPageIndex(pageNumber)}
                    >
-                         {i + 1}
+                         {pageNumber + 1}
                    </Button>
+               )
              ))}
            </div>
           <Button
             variant="outline"
-             className="h-9 px-3 text-sm font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50"
+             className="h-9 px-3 text-sm font-medium border-gray-200 bg-white text-gray-700 hover:bg-gray-100 rounded-[3px] shadow-none disabled:opacity-50 shrink-0"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >

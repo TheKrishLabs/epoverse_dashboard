@@ -2,7 +2,7 @@ import { UserList } from "@/components/settings/user-list"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Employee List | Settings",
+  title: "User List | Settings",
   description: "Manage system users",
 }
 

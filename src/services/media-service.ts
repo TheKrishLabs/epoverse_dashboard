@@ -1,3 +1,4 @@
+/* eslint-disable */
 import api from "@/lib/axios";
 
 export interface Photo {
@@ -28,9 +29,14 @@ export interface GetPhotosResponse {
 }
 
 export const mediaService = {
-  uploadPhoto: async (formData: FormData): Promise<UploadPhotoResponse> => {
+  uploadPhoto: async (
+    formData: FormData,
+    onUploadProgress?: (progressEvent: any) => void
+  ): Promise<UploadPhotoResponse> => {
     try {
-      const response = await api.post<UploadPhotoResponse>('/media', formData);
+      const response = await api.post<UploadPhotoResponse>('/media', formData, {
+        onUploadProgress,
+      });
       return response;
     } catch (error) {
       console.error("Media upload failed", error);

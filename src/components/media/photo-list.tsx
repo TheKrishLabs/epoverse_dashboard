@@ -1,11 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Trash2, Copy, Eye, Loader2, RefreshCcw } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Trash2, Copy, Eye, Loader2, RefreshCcw, Search, Filter, Plus } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 
 import { mediaService, Photo } from "@/services/media-service";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -27,28 +36,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export function PhotoList() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [page] = useState(1);
-  
+
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
+
   // Details Modal State
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [detailedPhoto, setDetailedPhoto] = useState<Photo | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  
+
   // Toggle Soft Delete State
   const [photoToToggle, setPhotoToToggle] = useState<Photo | null>(null);
   const [isToggling, setIsToggling] = useState(false);
-  
+
   const fetchPhotos = useCallback(async () => {
     setIsLoading(true);
     setError(false);
     try {
-      const data = await mediaService.getPhotos(page, 20); 
-      setPhotos(data.photos || []); 
+      const data = await mediaService.getPhotos(page, 100); // Fetching more to allow client-side filtering
+      setPhotos(data.photos || []);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -61,28 +76,58 @@ export function PhotoList() {
     fetchPhotos();
   }, [fetchPhotos]);
 
+  // Derived State (Filtering and Sorting)
+  const filteredAndSortedPhotos = useMemo(() => {
+    let result = [...photos];
+
+    // Filter by Status
+    if (statusFilter !== 'all') {
+      const isDeletedFilter = statusFilter === 'deleted';
+      result = result.filter(p => (p.status === 'Deleted') === isDeletedFilter);
+    }
+
+    // Filter by Search Query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        (p.caption && p.caption.toLowerCase().includes(query)) ||
+        (p.url && p.url.toLowerCase().includes(query)) ||
+        (p.reference && p.reference.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [photos, statusFilter, searchQuery, sortOrder]);
+
+
   const executeToggleStatus = async () => {
     if (!photoToToggle) return;
     setIsToggling(true);
     try {
       await mediaService.toggleSoftDeletePhoto(photoToToggle._id);
-      
-      // Optimistically update the exact card in the UI without re-fetching everything
+
       setPhotos(prev => prev.map(p => {
-          if (p._id === photoToToggle._id) {
-              return { 
-                  ...p, 
-                  status: p.status === 'Deleted' ? 'Active' : 'Deleted' 
-              };
-          }
-          return p;
+        if (p._id === photoToToggle._id) {
+          return {
+            ...p,
+            status: p.status === 'Deleted' ? 'Active' : 'Deleted'
+          };
+        }
+        return p;
       }));
       setPhotoToToggle(null);
     } catch (error) {
-       console.error("Failed to toggle photo status", error);
-       alert("Failed to change photo status.");
+      console.error("Failed to delete photo", error);
+      alert("Failed to delete photo.");
     } finally {
-       setIsToggling(false);
+      setIsToggling(false);
     }
   };
 
@@ -91,226 +136,276 @@ export function PhotoList() {
     alert("URL copied to clipboard!");
   }
 
-  const handleViewDetails = async (id: string) => {
-    setSelectedPhotoId(id);
-    setIsLoadingDetails(true);
-    setDetailedPhoto(null);
-    try {
-        const photo = await mediaService.getPhotoById(id);
-        setDetailedPhoto(photo);
-    } catch (err) {
-        console.error("Failed to load photo details", err);
-        alert("Failed to fetch image details.");
-        setSelectedPhotoId(null);
-    } finally {
-        setIsLoadingDetails(false);
-    }
+  const handleViewDetails = (photo: Photo) => {
+    setSelectedPhotoId(photo._id);
+    setDetailedPhoto(photo);
   };
 
   const closeDetails = () => {
-      setSelectedPhotoId(null);
-      setDetailedPhoto(null);
+    setSelectedPhotoId(null);
+    setDetailedPhoto(null);
   };
 
-  if (isLoading && photos.length === 0) {
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="space-y-2 animate-pulse">
-                    <div className="h-48 w-full rounded-md bg-muted" />
-                    <div className="h-4 w-3/4 bg-muted" />
-                    <div className="h-4 w-1/2 bg-muted" />
-                </div>
-            ))}
-        </div>
-    );
-  }
-
   if (error) {
-      return (
-          <div className="flex flex-col items-center justify-center p-12 text-center">
-              <p className="text-red-500 mb-4">Failed to load photos.</p>
-              <Button onClick={fetchPhotos}>Try Again</Button>
-          </div>
-      )
-  }
-
-  if (photos.length === 0) {
-      return (
-          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
-              <p>No photos found.</p>
-          </div>
-      )
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <p className="text-red-500 mb-4">Failed to load photos.</p>
+        <Button onClick={fetchPhotos}>Try Again</Button>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {photos.map((photo) => {
-          const isDeleted = photo.status === 'Deleted';
-          return (
-          <Card key={photo._id} className="overflow-hidden group relative">
-             <div 
-                 className={`relative aspect-video bg-muted overflow-hidden transition-opacity ${isDeleted ? 'opacity-50 grayscale' : ''}`}
-             >
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img 
-                 src={photo.thumbnailUrl || photo.url} 
-                 alt={photo.caption || "Photo"} 
-                 className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-               />
-
-               {isDeleted && (
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                       <span className="bg-red-500/90 text-white px-3 py-1 font-bold tracking-widest text-sm rounded shadow-lg border border-red-700">
-                           DELETED
-                       </span>
-                   </div>
-               )}
-             </div>
-            <CardContent className="p-4 space-y-2">
-               {photo.caption && <p className="font-medium truncate" title={photo.caption}>{photo.caption}</p>}
-               <p className="text-xs text-muted-foreground truncate" title={photo.url}>{photo.url}</p>
-               <div className="flex justify-between text-xs text-muted-foreground">
-                   <span>
-                       {photo.dimensions?.large?.width}x{photo.dimensions?.large?.height}
-                   </span>
-                   <span>
-                       {format(new Date(photo.createdAt), 'MMM dd, yyyy')}
-                   </span>
-               </div>
-            </CardContent>
-            <CardFooter className="p-4 pt-0 flex justify-between items-center bg-gray-50/50">
-                <div className="flex items-center gap-1">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        onClick={() => handleViewDetails(photo._id)}
-                        title="Preview Image"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                        onClick={() => copyToClipboard(photo.url)}
-                        title="Copy URL"
-                    >
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                </div>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-8 w-8 ${isDeleted ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" : "text-destructive hover:text-destructive hover:bg-destructive/10"}`} 
-                    onClick={() => setPhotoToToggle(photo)}
-                    title={isDeleted ? "Restore Photo" : "Soft Delete Photo"}
-                >
-                    {isDeleted ? <RefreshCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
-                </Button>
-            </CardFooter>
-          </Card>
-        )})}
+      {/* Top Header (Above the new div, at each corner) */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-bold tracking-tight">Photo List</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage your uploaded photos.
+          </p>
+        </div>
+        <Link href="/media-library/upload">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Upload New
+          </Button>
+        </Link>
       </div>
-      {/* Pagination controls would go here */}
 
-      {/* Media Details Modal API Integration */}
+      {/* New Div Wrapping Search, Filters, and Posts */}
+      <div className="bg-card border rounded-lg shadow-sm p-4 sm:p-6 space-y-6">
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by caption or URL..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active Only</SelectItem>
+                  <SelectItem value="deleted">Trash/Deleted</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+      {/* Loading Skeleton */}
+      {isLoading && photos.length === 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+            <div key={i} className="space-y-2 animate-pulse">
+              <div className="aspect-square w-full rounded-lg bg-muted" />
+              <div className="h-3 w-3/4 bg-muted rounded" />
+              <div className="h-3 w-1/2 bg-muted rounded" />
+            </div>
+          ))}
+        </div>
+      ) : filteredAndSortedPhotos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-16 text-center text-muted-foreground border rounded-lg border-dashed bg-muted/20">
+          <p className="text-lg font-medium mb-1">No media found.</p>
+          <p className="text-sm">Try adjusting your search or filters.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 lg:gap-6">
+          {filteredAndSortedPhotos.map((photo) => {
+            const isDeleted = photo.status === 'Deleted';
+            return (
+              <Card key={photo._id} className="overflow-hidden rounded-2xl group relative flex flex-col hover:shadow-xl transition-all duration-300 border-border/40 hover:border-primary/30 bg-card p-2 gap-1">
+                <div
+                  className={`relative aspect-[16/10] bg-muted/30 overflow-hidden rounded-xl transition-all duration-300 cursor-pointer ${isDeleted ? 'opacity-60 grayscale' : ''}`}
+                  onClick={() => handleViewDetails(photo)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.thumbnailUrl || photo.url}
+                    alt={photo.caption || "Photo"}
+                    className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+
+                  {isDeleted && (
+                    <div className="absolute top-2 left-2 pointer-events-none">
+                      <Badge variant="destructive" className="shadow-sm font-semibold tracking-wide text-[10px]">DELETED</Badge>
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/50 text-white border-0 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+                      onClick={(e) => { e.stopPropagation(); handleViewDetails(photo); }}
+                    >
+                      <Eye className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/50 text-white border-0 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+                      onClick={(e) => { e.stopPropagation(); copyToClipboard(photo.url); }}
+                    >
+                      <Copy className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="p-2 pb-0">
+                  <div>
+                    <p className="text-sm font-semibold line-clamp-1 mb-0 text-foreground/90 group-hover:text-primary transition-colors leading-tight" title={photo.caption || photo.url.split('/').pop()}>
+                      {photo.caption || photo.url.split('/').pop()}
+                    </p>
+                    {photo.dimensions?.large?.width && photo.dimensions?.large?.height && (
+                      <p className="text-[11px] text-muted-foreground/70 truncate font-medium mt-0.5" title={photo.url}>
+                        {photo.dimensions.large.width} × {photo.dimensions.large.height}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="p-2 pt-0 flex justify-between items-center">
+                  <span className="text-[11px] text-muted-foreground/60 font-medium">
+                    {format(new Date(photo.createdAt || Date.now()), 'MMM d, yyyy')}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                    onClick={() => setPhotoToToggle(photo)}
+                    title="Permanently Delete Photo"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+      </div>
+
+      {/* Media Details Modal */}
       <Dialog open={!!selectedPhotoId} onOpenChange={(open) => !open && closeDetails()}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Image Details</DialogTitle>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle>Media Details</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col md:flex-row gap-6">
-              {/* Left Column: Image Display */}
-             <div className="flex-1 min-h-[300px] bg-muted flex items-center justify-center rounded-md border overflow-hidden relative">
-                 {isLoadingDetails ? (
-                     <div className="flex flex-col items-center text-muted-foreground">
-                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                         <span>Fetching API Data...</span>
-                     </div>
-                 ) : detailedPhoto ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={detailedPhoto.url} 
-                      alt={detailedPhoto.caption || "Detailed view"} 
-                      className="max-h-[500px] object-contain w-full h-full"
-                    />
-                 ) : (
-                     <span className="text-muted-foreground">Image not found</span>
-                 )}
-             </div>
+          <div className="flex flex-col md:flex-row">
+            {/* Left Column: Image Display */}
+            <div className="flex-1 min-h-[400px] bg-muted/30 flex items-center justify-center p-6 border-r relative group">
+              {isLoadingDetails ? (
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                  <span className="text-sm">Fetching Image Details...</span>
+                </div>
+              ) : detailedPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={detailedPhoto.url}
+                  alt={detailedPhoto.caption || "Detailed view"}
+                  className="max-h-[60vh] object-contain drop-shadow-md rounded"
+                />
+              ) : (
+                <span className="text-muted-foreground">Image not found</span>
+              )}
+            </div>
 
-             {/* Right Column: Metadata Extracted from GET /api/media/:id */}
-             <div className="w-full md:w-64 space-y-6">
-                 {detailedPhoto && (
-                     <>
-                        <div>
-                            <h4 className="font-semibold text-sm mb-1">Caption</h4>
-                            <p className="text-sm text-muted-foreground break-words">{detailedPhoto.caption || "No caption"}</p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-sm mb-1">Original Dimensions</h4>
-                            <p className="text-sm text-muted-foreground font-mono bg-muted py-1 px-2 rounded w-fit">
-                                {detailedPhoto.dimensions?.large?.width || "?"} x {detailedPhoto.dimensions?.large?.height || "?"}
-                            </p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-sm mb-1">Upload Date</h4>
-                            <p className="text-sm text-muted-foreground">
-                                {detailedPhoto.createdAt ? format(new Date(detailedPhoto.createdAt), 'PPP') : "Unknown"}
-                            </p>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold text-sm mb-1">Status</h4>
-                            <span className={`text-xs px-2 py-1 rounded-full text-white ${detailedPhoto.status === 'Deleted' ? 'bg-red-500' : 'bg-emerald-500'}`}>
-                                {detailedPhoto.status || "Active"}
-                            </span>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold text-sm mb-1">Direct URL</h4>
-                            <div className="flex gap-2">
-                                <Button 
-                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800"
-                                    onClick={() => copyToClipboard(detailedPhoto.url)}
-                                >
-                                    <Copy className="h-4 w-4 mr-2" /> Copy link
-                                </Button>
-                            </div>
-                        </div>
-                     </>
-                 )}
-             </div>
+            {/* Right Column: Metadata */}
+            <div className="w-full md:w-80 p-6 space-y-6 overflow-y-auto max-h-[60vh]">
+              {detailedPhoto && (
+                <>
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Status</h4>
+                    <Badge variant={detailedPhoto.status === 'Deleted' ? 'destructive' : 'default'} className="rounded-sm">
+                      {detailedPhoto.status || "Active"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Caption</h4>
+                    <p className="text-sm font-medium break-all">{detailedPhoto.caption || detailedPhoto.url.split('/').pop()}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Reference</h4>
+                    <p className="text-sm font-medium">{detailedPhoto.reference || "—"}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Dimensions</h4>
+                      <p className="text-sm font-mono bg-muted/50 py-1 px-2 rounded-md w-fit border border-muted">
+                        {detailedPhoto.dimensions?.large?.width && detailedPhoto.dimensions?.large?.height 
+                          ? `${detailedPhoto.dimensions.large.width} × ${detailedPhoto.dimensions.large.height}`
+                          : "Unknown"}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Date Added</h4>
+                      <p className="text-sm font-medium">
+                        {detailedPhoto.createdAt ? format(new Date(detailedPhoto.createdAt), 'MMM d, yyyy') : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Direct Link</h4>
+                    <div className="flex gap-2">
+                      <Input readOnly value={detailedPhoto.url} className="text-xs font-mono h-9 bg-muted/50" />
+                      <Button size="icon" className="h-9 w-9 shrink-0" onClick={() => copyToClipboard(detailedPhoto.url)}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Modal for Toggle Delete/Restore */}
+      {/* Confirmation Modal for Hard Delete */}
       <AlertDialog open={!!photoToToggle} onOpenChange={(open) => !open && setPhotoToToggle(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-                {photoToToggle?.status === 'Deleted' ? 'Restore this Photo?' : 'Delete this Photo?'}
+              Delete this Photo permanently?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {photoToToggle?.status === 'Deleted' 
-                ? "This photo is currently hidden in the Trash. Restoring it will make it visible and active again across the platform."
-                : "This photo will be soft-deleted. It will no longer be visible to normal users, but will be safely retained in the Trash until permanently purged."}
+              This photo will be permanently deleted. This action cannot be undone and will remove the photo from all linked locations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isToggling}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={(e) => { e.preventDefault(); executeToggleStatus(); }}
-                disabled={isToggling}
-                className={photoToToggle?.status === 'Deleted' ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); executeToggleStatus(); }}
+              disabled={isToggling}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-                {isToggling ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing</>
-                ) : (
-                    photoToToggle?.status === 'Deleted' ? 'Yes, Restore' : 'Yes, Delete'
-                )}
+              {isToggling ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing</>
+              ) : (
+                'Yes, Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

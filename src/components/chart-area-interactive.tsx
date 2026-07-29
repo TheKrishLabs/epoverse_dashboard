@@ -163,7 +163,7 @@ export function ChartAreaInteractive({ dashboardData }: { dashboardData?: Dashbo
   })
 
   return (
-    <Card className="pt-0">
+    <Card className="rounded-2xl shadow-sm border-none bg-white/80 dark:bg-slate-900/50 backdrop-blur-md h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle>Total Visitors</CardTitle>
