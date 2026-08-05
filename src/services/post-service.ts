@@ -80,6 +80,17 @@ export const postService = {
       }
   },
 
+  updateCategoryOrder: async (orderedIds: string[]): Promise<boolean> => {
+      try {
+          // Send an array of IDs to the backend to update their order
+          await api.put('/categories/reorder', { orderedIds });
+          return true;
+      } catch (error) {
+          console.error("Failed to reorder categories", error);
+          throw error;
+      }
+  },
+
   deleteCategory: async (id: string): Promise<boolean> => {
       try {
           await api.delete(`/categories/${id}`);
